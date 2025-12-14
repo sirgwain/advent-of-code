@@ -1,4 +1,5 @@
 # advent-of-code
+
 This repo contains my solutions to the https://adventofcode.com daily puzzles.
 
 ## building
@@ -8,7 +9,8 @@ make
 ```
 
 ## inputs
-inputs are downloaded automatically if an `AOC_SESSION` env var is set. You can also create a `.env` file for the environment variable
+
+Inputs are downloaded automatically if an `AOC_SESSION` env var is set. You can also create a `.env` file for the environment variable
 
 ```zsh
 export AOC_SESSION=53616c7....
@@ -22,7 +24,7 @@ Time taken 516µs
 
 ## running
 
-puzzles can be run for a year/day, or all puzzles can be run if no year is specified
+Puzzles can be run for a year/day, or all puzzles can be run if no year is specified
 
 ```zsh
 ❯ ./advent-of-code run -h
@@ -39,4 +41,20 @@ Flags:
 
 Global Flags:
       --debug   enable debug logging
+```
+
+## adding a new day
+
+All puzzles must have a Run function satisfying this interface and must be placed in an `advent/<year>/<dayn>/` package. 
+
+```go
+type runner interface {
+	Run([]byte) (int, int, error)
+}
+```
+
+A code generator in [cmd/genrunners/main.go](cmd/genrunners/main.go) will add days to [runner_gen.go](cmd/runner_gen.go).
+
+```zsh
+go generate ./...
 ```
