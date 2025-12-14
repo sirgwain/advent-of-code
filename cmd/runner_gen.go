@@ -9,6 +9,7 @@ import (
 	y2015d3 "github.com/sirgwain/advent-of-code/advent/2015/day3"
 	y2015d4 "github.com/sirgwain/advent-of-code/advent/2015/day4"
 	y2015d5 "github.com/sirgwain/advent-of-code/advent/2015/day5"
+	y2015d6 "github.com/sirgwain/advent-of-code/advent/2015/day6"
 )
 
 type runner interface {
@@ -36,6 +37,8 @@ func getRunner(year, day int) (dayRunner, error) {
 			r = &y2015d4.Day{}
 		case 5:
 			r = &y2015d5.Day{}
+		case 6:
+			r = &y2015d6.Day{}
 		}
 	}
 
@@ -46,12 +49,13 @@ func getRunner(year, day int) (dayRunner, error) {
 }
 
 func getAllRunners() []dayRunner {
-	runners := make([]dayRunner, 0, 5)
+	runners := make([]dayRunner, 0, 6)
 	runners = append(runners, dayRunner{r: &y2015d1.Day{}, year: 2015, day: 1})
 	runners = append(runners, dayRunner{r: &y2015d2.Day{}, year: 2015, day: 2})
 	runners = append(runners, dayRunner{r: &y2015d3.Day{}, year: 2015, day: 3})
 	runners = append(runners, dayRunner{r: &y2015d4.Day{}, year: 2015, day: 4})
 	runners = append(runners, dayRunner{r: &y2015d5.Day{}, year: 2015, day: 5})
+	runners = append(runners, dayRunner{r: &y2015d6.Day{}, year: 2015, day: 6})
 
 	return runners
 }
