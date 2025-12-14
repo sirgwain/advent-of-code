@@ -1,35 +1,26 @@
 package cmd
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
+	"time"
 
+	"github.com/phsym/console-slog"
 	"github.com/spf13/cobra"
 )
 
-var logFile string
+var debug bool
 
 func logPreRun(cmd *cobra.Command, args []string) error {
-	// log output to file
-	if logFile != "" {
-		if err := os.MkdirAll(filepath.Dir(logFile), 0755); err != nil {
-			return fmt.Errorf("failed to create log dir %s %w", filepath.Base(logFile), err)
-		}
-		os.Remove(logFile)
-		logFileWriter, err := os.OpenFile(
-			logFile,
-			os.O_CREATE|os.O_WRONLY,
-			0664,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create log file %s %w", logFile, err)
-		}
-		logger := slog.New(slog.NewTextHandler(logFileWriter, &slog.HandlerOptions{Level: slog.LevelDebug}))
-		slog.SetDefault(logger)
-		slog.Info("logging enabled")
+	level := slog.LevelWarn
+	if debug {
+		level = slog.LevelDebug
 	}
+	logger := slog.New(
+		console.NewHandler(os.Stderr, &console.HandlerOptions{Level: level, TimeFormat: time.TimeOnly}),
+	)
+	slog.SetDefault(logger)
+
 	return nil
 }
 
@@ -57,5 +48,5 @@ func Execute() {
 
 func init() {
 	// all commands have debug mode
-	rootCmd.PersistentFlags().StringVarP(&logFile, "log", "", "tmp/advent.log", "log file to send structured logs to")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logging")
 }
