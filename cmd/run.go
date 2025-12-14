@@ -54,8 +54,8 @@ func newRunCmd() *cobra.Command {
 	var input string
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "run a day",
-		Long:  `run the solution for a day`,
+		Short: "run a solution",
+		Long:  `run the solution for a year/day or all days if no year/day is specified`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var runners []dayRunner
 			if day != 0 {
