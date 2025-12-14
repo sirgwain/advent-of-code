@@ -11,6 +11,7 @@ import (
 	y2015d5 "github.com/sirgwain/advent-of-code/advent/2015/day5"
 	y2015d6 "github.com/sirgwain/advent-of-code/advent/2015/day6"
 	y2015d7 "github.com/sirgwain/advent-of-code/advent/2015/day7"
+	y2015d8 "github.com/sirgwain/advent-of-code/advent/2015/day8"
 	y2025d1 "github.com/sirgwain/advent-of-code/advent/2025/day1"
 )
 
@@ -43,6 +44,8 @@ func getRunner(year, day int) (dayRunner, error) {
 			r = &y2015d6.Day{}
 		case 7:
 			r = &y2015d7.Day{}
+		case 8:
+			r = &y2015d8.Day{}
 		}
 	case 2025:
 		switch day {
@@ -58,7 +61,7 @@ func getRunner(year, day int) (dayRunner, error) {
 }
 
 func getAllRunners() []dayRunner {
-	runners := make([]dayRunner, 0, 8)
+	runners := make([]dayRunner, 0, 9)
 	runners = append(runners, dayRunner{r: &y2015d1.Day{}, year: 2015, day: 1})
 	runners = append(runners, dayRunner{r: &y2015d2.Day{}, year: 2015, day: 2})
 	runners = append(runners, dayRunner{r: &y2015d3.Day{}, year: 2015, day: 3})
@@ -66,6 +69,7 @@ func getAllRunners() []dayRunner {
 	runners = append(runners, dayRunner{r: &y2015d5.Day{}, year: 2015, day: 5})
 	runners = append(runners, dayRunner{r: &y2015d6.Day{}, year: 2015, day: 6})
 	runners = append(runners, dayRunner{r: &y2015d7.Day{}, year: 2015, day: 7})
+	runners = append(runners, dayRunner{r: &y2015d8.Day{}, year: 2015, day: 8})
 	runners = append(runners, dayRunner{r: &y2025d1.Day{}, year: 2025, day: 1})
 
 	return runners

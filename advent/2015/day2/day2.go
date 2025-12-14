@@ -1,6 +1,7 @@
 package day2
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,10 +13,7 @@ type Day struct {
 func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 
-	for _, line := range strings.Split((string(input)), "\n") {
-		if line == "" {
-			continue
-		}
+	for line := range strings.SplitSeq(string(bytes.TrimSpace(input)), "\n") {
 		// input is like
 		// 2x3x4
 		dims := strings.Split(line, "x")

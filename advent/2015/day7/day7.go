@@ -34,7 +34,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 	// build a list of instructions from the input
 	instructions := make(map[string]instruction)
-	for _, line := range strings.Split(string(bytes.TrimSpace(input)), "\n") {
+	for line := range strings.SplitSeq(string(bytes.TrimSpace(input)), "\n") {
 		ins, out, err := parseLine(line)
 		if err != nil {
 			return 0, 0, err

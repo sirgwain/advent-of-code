@@ -30,7 +30,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 	board1 := advent.MakeBoard[bool](1000, 1000)
 	board2 := advent.MakeBoard[int](1000, 1000)
-	for _, line := range strings.Split(string(bytes.TrimSpace(input)), "\n") {
+	for line := range strings.SplitSeq(string(bytes.TrimSpace(input)), "\n") {
 		order, err := parseLine(line)
 		if err != nil {
 			return 0, 0, err

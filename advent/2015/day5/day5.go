@@ -11,7 +11,7 @@ type Day struct {
 func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 
-	for _, line := range strings.Split(string(bytes.TrimSpace(input)), "\n") {
+	for line := range strings.SplitSeq(string(bytes.TrimSpace(input)), "\n") {
 		if isNice1(line) {
 			s1++
 		}
