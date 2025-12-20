@@ -32,6 +32,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 			return 0, 0, fmt.Errorf("failed to parse number in line %s %v", line, err)
 		}
 		g.AddEdge(source, dest, dist)
+		g.AddEdge(dest, source, dist)
 	}
 
 	var s1, s2 int

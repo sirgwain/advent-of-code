@@ -1,5 +1,7 @@
 package advent
 
+import "fmt"
+
 type Node[T any] struct {
 	Key   string
 	Edges []*Edge[T]
@@ -13,7 +15,6 @@ type Edge[T any] struct {
 
 type Graph[T any] struct {
 	Nodes []*Node[T]
-	Edges []*Edge[T]
 
 	nodesByKey map[string]*Node[T]
 }
@@ -42,9 +43,20 @@ func (g *Graph[T]) AddEdge(key1, key2 string, weight int) {
 	}
 
 	edge := Edge[T]{N1: n1, N2: n2, Weight: weight}
-	g.Edges = append(g.Edges, &edge)
 	n1.Edges = append(n1.Edges, &edge)
-	n2.Edges = append(n2.Edges, &edge)
+}
+
+func (n *Node[T]) String() string {
+	return n.Key
+}
+
+func (n *Node[T]) Edge(other *Node[T]) *Edge[T] {
+	for _, e := range n.Edges {
+		if e.N2 == other {
+			return e
+		}
+	}
+	return nil
 }
 
 func (e *Edge[T]) OtherNode(n *Node[T]) *Node[T] {
@@ -52,4 +64,8 @@ func (e *Edge[T]) OtherNode(n *Node[T]) *Node[T] {
 		return e.N2
 	}
 	return e.N1
+}
+
+func (e *Edge[T]) String() string {
+	return fmt.Sprintf("%s -(%d)-> %s", e.N1.String(), e.Weight, e.N2.String())
 }

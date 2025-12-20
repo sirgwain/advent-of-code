@@ -31,7 +31,7 @@ Puzzles can be run for a year/day, or all puzzles can be run if no year is speci
 run the solution for a year/day or all days if no year/day is specified
 
 Usage:
-  advent-of-code-2025 run [flags]
+  advent-of-code run [flags]
 
 Flags:
   -d, --day int        the puzzle day to run

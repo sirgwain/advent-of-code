@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/phsym/console-slog v0.3.1
-	github.com/sirgwain/advent-of-code-2025 v0.0.0-20251213152650-8eca7a653f99
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/tools v0.40.0
 )

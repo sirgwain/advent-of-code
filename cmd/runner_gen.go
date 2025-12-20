@@ -6,6 +6,14 @@ import (
 	"fmt"
 	y2015d1 "github.com/sirgwain/advent-of-code/advent/2015/day1"
 	y2015d10 "github.com/sirgwain/advent-of-code/advent/2015/day10"
+	y2015d11 "github.com/sirgwain/advent-of-code/advent/2015/day11"
+	y2015d12 "github.com/sirgwain/advent-of-code/advent/2015/day12"
+	y2015d13 "github.com/sirgwain/advent-of-code/advent/2015/day13"
+	y2015d14 "github.com/sirgwain/advent-of-code/advent/2015/day14"
+	y2015d15 "github.com/sirgwain/advent-of-code/advent/2015/day15"
+	y2015d16 "github.com/sirgwain/advent-of-code/advent/2015/day16"
+	y2015d17 "github.com/sirgwain/advent-of-code/advent/2015/day17"
+	y2015d18 "github.com/sirgwain/advent-of-code/advent/2015/day18"
 	y2015d2 "github.com/sirgwain/advent-of-code/advent/2015/day2"
 	y2015d3 "github.com/sirgwain/advent-of-code/advent/2015/day3"
 	y2015d4 "github.com/sirgwain/advent-of-code/advent/2015/day4"
@@ -15,70 +23,250 @@ import (
 	y2015d8 "github.com/sirgwain/advent-of-code/advent/2015/day8"
 	y2015d9 "github.com/sirgwain/advent-of-code/advent/2015/day9"
 	y2025d1 "github.com/sirgwain/advent-of-code/advent/2025/day1"
+	"strconv"
 )
 
 type runner interface {
 	Run([]byte) (int, int, error)
 }
 
+type runnerS interface {
+	RunS([]byte) (string, string, error)
+}
+
 type dayRunner struct {
 	r    runner
+	rs   runnerS
 	year int
 	day  int
 }
 
+// Run returns string solutions for both kinds.
+// If the underlying day returns ints, they are converted with strconv.Itoa.
+func (d dayRunner) Run(input []byte) (string, string, error) {
+	if d.rs != nil {
+		return d.rs.RunS(input)
+	}
+	if d.r != nil {
+		a, b, err := d.r.Run(input)
+		if err != nil {
+			return "", "", err
+		}
+		return strconv.Itoa(a), strconv.Itoa(b), nil
+	}
+	return "", "", fmt.Errorf("runner %d/%d has no Run/RunS implementation", d.year, d.day)
+}
+
 func getRunner(year, day int) (dayRunner, error) {
 	var r runner
+	var rs runnerS
+
 	switch year {
 	case 2015:
 		switch day {
 		case 1:
-			r = &y2015d1.Day{}
+			impl := &y2015d1.Day{}
+			r = impl
 		case 2:
-			r = &y2015d2.Day{}
+			impl := &y2015d2.Day{}
+			r = impl
 		case 3:
-			r = &y2015d3.Day{}
+			impl := &y2015d3.Day{}
+			r = impl
 		case 4:
-			r = &y2015d4.Day{}
+			impl := &y2015d4.Day{}
+			r = impl
 		case 5:
-			r = &y2015d5.Day{}
+			impl := &y2015d5.Day{}
+			r = impl
 		case 6:
-			r = &y2015d6.Day{}
+			impl := &y2015d6.Day{}
+			r = impl
 		case 7:
-			r = &y2015d7.Day{}
+			impl := &y2015d7.Day{}
+			r = impl
 		case 8:
-			r = &y2015d8.Day{}
+			impl := &y2015d8.Day{}
+			r = impl
 		case 9:
-			r = &y2015d9.Day{}
+			impl := &y2015d9.Day{}
+			r = impl
 		case 10:
-			r = &y2015d10.Day{}
+			impl := &y2015d10.Day{}
+			r = impl
+		case 11:
+			impl := &y2015d11.Day{}
+			rs = impl
+		case 12:
+			impl := &y2015d12.Day{}
+			r = impl
+		case 13:
+			impl := &y2015d13.Day{}
+			r = impl
+		case 14:
+			impl := &y2015d14.Day{}
+			r = impl
+		case 15:
+			impl := &y2015d15.Day{}
+			r = impl
+		case 16:
+			impl := &y2015d16.Day{}
+			r = impl
+		case 17:
+			impl := &y2015d17.Day{}
+			r = impl
+		case 18:
+			impl := &y2015d18.Day{}
+			r = impl
 		}
 	case 2025:
 		switch day {
 		case 1:
-			r = &y2025d1.Day{}
+			impl := &y2025d1.Day{}
+			r = impl
 		}
 	}
 
-	if r == nil {
+	if r == nil && rs == nil {
 		return dayRunner{}, fmt.Errorf("day %d/%d not found", year, day)
 	}
-	return dayRunner{r: r, year: year, day: day}, nil
+	return dayRunner{r: r, rs: rs, year: year, day: day}, nil
 }
 
 func getAllRunners() []dayRunner {
-	runners := make([]dayRunner, 0, 11)
-	runners = append(runners, dayRunner{r: &y2015d1.Day{}, year: 2015, day: 1})
-	runners = append(runners, dayRunner{r: &y2015d2.Day{}, year: 2015, day: 2})
-	runners = append(runners, dayRunner{r: &y2015d3.Day{}, year: 2015, day: 3})
-	runners = append(runners, dayRunner{r: &y2015d4.Day{}, year: 2015, day: 4})
-	runners = append(runners, dayRunner{r: &y2015d5.Day{}, year: 2015, day: 5})
-	runners = append(runners, dayRunner{r: &y2015d6.Day{}, year: 2015, day: 6})
-	runners = append(runners, dayRunner{r: &y2015d7.Day{}, year: 2015, day: 7})
-	runners = append(runners, dayRunner{r: &y2015d8.Day{}, year: 2015, day: 8})
-	runners = append(runners, dayRunner{r: &y2015d9.Day{}, year: 2015, day: 9})
-	runners = append(runners, dayRunner{r: &y2015d10.Day{}, year: 2015, day: 10})
-	runners = append(runners, dayRunner{r: &y2025d1.Day{}, year: 2025, day: 1})
-
+	runners := make([]dayRunner, 0, 19)
+	{
+		impl := &y2015d1.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 1})
+	}
+	{
+		impl := &y2015d2.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 2})
+	}
+	{
+		impl := &y2015d3.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 3})
+	}
+	{
+		impl := &y2015d4.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 4})
+	}
+	{
+		impl := &y2015d5.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 5})
+	}
+	{
+		impl := &y2015d6.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 6})
+	}
+	{
+		impl := &y2015d7.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 7})
+	}
+	{
+		impl := &y2015d8.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 8})
+	}
+	{
+		impl := &y2015d9.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 9})
+	}
+	{
+		impl := &y2015d10.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 10})
+	}
+	{
+		impl := &y2015d11.Day{}
+		var r runner
+		var rs runnerS
+		rs = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 11})
+	}
+	{
+		impl := &y2015d12.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 12})
+	}
+	{
+		impl := &y2015d13.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 13})
+	}
+	{
+		impl := &y2015d14.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 14})
+	}
+	{
+		impl := &y2015d15.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 15})
+	}
+	{
+		impl := &y2015d16.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 16})
+	}
+	{
+		impl := &y2015d17.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 17})
+	}
+	{
+		impl := &y2015d18.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2015, day: 18})
+	}
+	{
+		impl := &y2025d1.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2025, day: 1})
+	}
 	return runners
 }

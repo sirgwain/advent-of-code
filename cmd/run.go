@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func runDay(r runner, input string, year, day int) error {
+func runDay(r dayRunner, input string, year, day int) error {
 	// load the input data
 	defaultInput := fmt.Sprintf("inputs/%d/day%d.txt", year, day)
 	if input == "" {
@@ -78,7 +78,7 @@ func newRunCmd() *cobra.Command {
 
 			// run the runners
 			for _, d := range runners {
-				if err := runDay(d.r, input, d.year, d.day); err != nil {
+				if err := runDay(d, input, d.year, d.day); err != nil {
 					return fmt.Errorf("failed to run %d/%d %v", d.year, d.day, err)
 				}
 			}

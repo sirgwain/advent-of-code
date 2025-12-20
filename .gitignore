@@ -34,3 +34,6 @@ go.work.sum
 
 # igore the binary
 advent-of-code
+
+# don't include input from benchmarks with real data
+advent/2015/day12/testdata/input.txt

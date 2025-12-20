@@ -6,21 +6,23 @@ type Day struct {
 }
 
 func (d *Day) Run(input []byte) (int, int, error) {
+	var s1, s2 int
 
-	floor := 0
-	firstBasementIndex := -1
+	s2 = -1
 	for i, c := range input {
 		switch c {
 		case '(':
-			floor++
+			s1++
 		case ')':
-			floor--
+			s1--
 		default:
 			return 0, 0, fmt.Errorf("unknown input %v", c)
 		}
-		if floor == -1 && firstBasementIndex == -1 {
-			firstBasementIndex = i
+		if s1 == -1 && s2 == -1 {
+			s2 = i
 		}
 	}
-	return floor, firstBasementIndex + 1, nil
+	s2 += 1
+
+	return s1, s2, nil
 }

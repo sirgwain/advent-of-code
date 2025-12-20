@@ -26,8 +26,8 @@ func logPreRun(cmd *cobra.Command, args []string) error {
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:               "advent-of-code-2025",
-	Short:             "advent-of-code solutions for 2025",
+	Use:               "advent-of-code",
+	Short:             "advent-of-code solutions for all years",
 	PersistentPreRunE: logPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Show usage
