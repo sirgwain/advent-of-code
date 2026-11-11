@@ -89,6 +89,7 @@ func newRunCmd() *cobra.Command {
 
 	cmd.Flags().IntVarP(&year, "year", "y", 2015, "the year to run")
 	cmd.Flags().IntVarP(&day, "day", "d", 0, "the puzzle day to run")
+	cmd.Flags().BoolVar(&advent.Viz.Enabled, "viz", false, "enable visualization")
 	cmd.Flags().StringVarP(&input, "input", "i", "", "the input file to load, defaults to inputs/<year>/day<n>.txt")
 
 	return cmd

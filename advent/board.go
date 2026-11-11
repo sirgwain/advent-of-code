@@ -1,7 +1,6 @@
 package advent
 
 import (
-	"bufio"
 	"bytes"
 	"strings"
 )
@@ -59,13 +58,7 @@ func FindValue[T int | uint | byte | rune | bool](board [][]T, c T) (x, y int) {
 
 // read input as a series of rune lines
 func BoardFromBytes(input []byte) [][]byte {
-	scanner := bufio.NewScanner(bytes.NewReader(bytes.TrimSpace(input)))
-	lines := make([][]byte, 0)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Bytes())
-	}
-
-	return lines
+	return bytes.Split(bytes.TrimSpace(input), []byte("\n"))
 }
 
 func BoardToString[T any](board [][]T, cell func(T) string) string {
