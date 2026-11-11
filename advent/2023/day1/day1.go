@@ -25,7 +25,7 @@ func runPart(input []byte, countWords bool) int {
 
 	for i, c := range input {
 		digit := -1
-		if advent.IsDigit(rune(c)) {
+		if advent.IsDigit(c) {
 			digit = advent.ToDigit(c)
 		} else if countWords {
 			// word strings count as digits as well
