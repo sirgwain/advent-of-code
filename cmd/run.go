@@ -34,13 +34,14 @@ func runDay(r dayRunner, input string, year, day int) error {
 	}
 
 	start := time.Now()
-	defer func() { fmt.Printf("\nTime taken %v\n", time.Since(start)) }()
 
 	// run the day
 	s1, s2, err := r.Run(content)
+	elapsed := time.Since(start)
 	if err != nil {
 		return err
 	}
+	defer func() { fmt.Printf("\nTime taken %v\n", elapsed) }()
 
 	fmt.Printf("%d-%d ", year, day)
 	advent.PrintSolution(s1, s2)

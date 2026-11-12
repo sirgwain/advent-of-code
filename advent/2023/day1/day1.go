@@ -1,7 +1,7 @@
 package day1
 
 import (
-	"strings"
+	"bytes"
 
 	"github.com/sirgwain/advent-of-code/advent"
 )
@@ -30,7 +30,7 @@ func runPart(input []byte, countWords bool) int {
 		} else if countWords {
 			// word strings count as digits as well
 			for j := range len(number_strings) {
-				if strings.HasPrefix(string(input[i:]), number_strings[j]) {
+				if bytes.HasPrefix(input[i:], []byte(number_strings[j])) {
 					digit = j + 1
 				}
 			}
