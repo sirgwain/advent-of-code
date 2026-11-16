@@ -19,7 +19,7 @@ type key uint
 type val uint
 
 func keyFromBytes(b []byte) key {
-	return key((uint32(b[2]) << 16) | (uint32(b[1]) << 8) | uint32(b[0]))
+	return key((uint32(b[0]) << 16) | (uint32(b[1]) << 8) | uint32(b[2]))
 }
 
 func (k key) String() string {
@@ -52,7 +52,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 	// CCC = (ZZZ, GGG)
 
 	directions, nodeBytes, _ := bytes.Cut(input, []byte("\n\n"))
-	numNodes := bytes.Count(nodeBytes, []byte{'\n'}) - 2
+	numNodes := bytes.Count(nodeBytes, []byte{'\n'}) + 1
 
 	// a node is just a map of 3 bytes with two endpoints, each 3 bytes
 	nodes := make(map[key]val, numNodes)
@@ -93,12 +93,12 @@ func part1(directions []byte, nodes map[key]val) int {
 			key = node.right()
 		}
 
-		node = nodes[key]
 		steps++ // part1 solution is the number of steps
 		if key == end {
 			break
 		}
 
+		node = nodes[key]
 		// directions loop
 		i++
 		if i >= len(directions) {
@@ -115,6 +115,9 @@ func part2(directions []byte, nodes map[key]val) int {
 		// for each node that ends in A, that's a ghost path, follow it
 		if (k & 0xFF) == 'A' {
 			steps := stepsToZ(directions, nodes, k)
+
+			// each A - Z path repeats for each ghost, so find the least common multiple
+			// of all paths, that's our solution
 			if lcm == 0 {
 				lcm = steps
 			} else {
@@ -126,7 +129,7 @@ func part2(directions []byte, nodes map[key]val) int {
 	return lcm
 }
 
-// / stepstoZ finds the steps one ghost takes to find a node ending in Z
+// stepstoZ finds the steps one ghost takes to find a node ending in Z
 func stepsToZ(directions []byte, nodes map[key]val, k key) int {
 	steps := 0
 
