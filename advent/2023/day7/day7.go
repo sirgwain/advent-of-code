@@ -16,11 +16,11 @@ type Day struct {
 type rank uint
 
 const (
-	rankA     rank = 0xE
-	rankK     rank = 0xD
-	rankQ     rank = 0xC
-	rankJ     rank = 0xB
-	rankT     rank = 0xA
+	rankA     rank = 14
+	rankK     rank = 13
+	rankQ     rank = 12
+	rankJ     rank = 11
+	rankT     rank = 10
 	rank9     rank = 9
 	rank8     rank = 8
 	rank7     rank = 7
@@ -100,56 +100,25 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 	hands := make([]hand, 0, bytes.Count(input, []byte{'\n'})+1)
 
+	// build a mapping of card character to rank
+	var cardVal = func() (t [256]rank) {
+		for i, c := range []byte("23456789TJQKA") {
+			t[c] = rank(i + 2) // 2..14, so J = 11
+		}
+		return
+	}()
+
 	for line := range bytes.SplitSeq(bytes.TrimSpace(input), []byte{'\n'}) {
 
 		// input is a card hand and a bid
 		// 32T3K 765
 
-		// for each card, increment its count in a card list for the card rank
 		var cards [15]int
 		var h [5]rank
 		for i := range 5 {
-			switch line[i] {
-			case 'A':
-				cards[rankA]++
-				h[i] = rankA
-			case 'K':
-				cards[rankK]++
-				h[i] = rankK
-			case 'Q':
-				cards[rankQ]++
-				h[i] = rankQ
-			case 'J':
-				cards[rankJ]++
-				h[i] = rankJ
-			case 'T':
-				cards[rankT]++
-				h[i] = rankT
-			case '9':
-				cards[rank9]++
-				h[i] = rank9
-			case '8':
-				cards[rank8]++
-				h[i] = rank8
-			case '7':
-				cards[rank7]++
-				h[i] = rank7
-			case '6':
-				cards[rank6]++
-				h[i] = rank6
-			case '5':
-				cards[rank5]++
-				h[i] = rank5
-			case '4':
-				cards[rank4]++
-				h[i] = rank4
-			case '3':
-				cards[rank3]++
-				h[i] = rank3
-			case '2':
-				cards[rank2]++
-				h[i] = rank2
-			}
+			r := cardVal[line[i]]
+			cards[r]++ // add this card to the cards count
+			h[i] = r   // remember this card for the hand
 		}
 
 		// bid is the number after the 5 cards
