@@ -98,7 +98,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 	var s1 int
 	var s2 int
 
-	hands := make([]hand, 0)
+	hands := make([]hand, 0, bytes.Count(input, []byte{'\n'})+1)
 
 	for line := range bytes.SplitSeq(bytes.TrimSpace(input), []byte{'\n'}) {
 
