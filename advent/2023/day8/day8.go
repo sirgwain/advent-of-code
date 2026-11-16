@@ -3,6 +3,8 @@ package day8
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/sirgwain/advent-of-code/advent"
 )
 
 type Day struct {
@@ -17,15 +19,15 @@ type key uint
 type val uint
 
 func keyFromBytes(b []byte) key {
-	return key((uint32(b[0]) << 16) | (uint32(b[1]) << 8) | uint32(b[0]))
+	return key((uint32(b[2]) << 16) | (uint32(b[1]) << 8) | uint32(b[0]))
 }
 
 func (k key) String() string {
-	return fmt.Sprintf("%c%c%c", (k>>16)&0xf, (k>>8)&0xf, k&0xf)
+	return fmt.Sprintf("%c%c%c", (k>>16)&0xFF, (k>>8)&0xFF, k&0xFF)
 }
 
 func (v val) String() string {
-	return fmt.Sprintf("(%c%c%c, %c%c%c)", (v>>40)&0xf, (v>>32)&0xf, (v>>24)&0xf, (v>>16)&0xf, (v>>8)&0xf, v&0xf)
+	return fmt.Sprintf("(%c%c%c, %c%c%c)", (v>>40)&0xFF, (v>>32)&0xFF, (v>>24)&0xFF, (v>>16)&0xFF, (v>>8)&0xFF, v&0xFF)
 }
 
 // left returns the key that makes up the top 3 bytes of the val
@@ -65,15 +67,26 @@ func (d *Day) Run(input []byte) (int, int, error) {
 		nodes[key] = val((left << 24) | right)
 	}
 
+	s1 = part1(directions, nodes)
+	s2 = part2(directions, nodes)
+
+	return s1, s2, nil
+}
+
+func part1(directions []byte, nodes map[key]val) int {
+	steps := 0
 	end := keyFromBytes([]byte("ZZZ"))
 	key := keyFromBytes([]byte("AAA"))
-	node := nodes[key]
+	node, ok := nodes[key]
+	if !ok {
+		// no start node (only true in tests)
+		return 0
+	}
+
 	i := 0
 	for {
-		dir := directions[i]
-
 		// traverse each direction
-		switch dir {
+		switch directions[i] {
 		case 'L':
 			key = node.left()
 		case 'R':
@@ -81,7 +94,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 		}
 
 		node = nodes[key]
-		s1++ // part1 solution is the number of steps
+		steps++ // part1 solution is the number of steps
 		if key == end {
 			break
 		}
@@ -91,8 +104,54 @@ func (d *Day) Run(input []byte) (int, int, error) {
 		if i >= len(directions) {
 			i = 0
 		}
+	}
+	return steps
+}
 
+func part2(directions []byte, nodes map[key]val) int {
+
+	lcm := 0
+	for k := range nodes {
+		// for each node that ends in A, that's a ghost path, follow it
+		if (k & 0xFF) == 'A' {
+			steps := stepsToZ(directions, nodes, k)
+			if lcm == 0 {
+				lcm = steps
+			} else {
+				lcm = advent.LCM(lcm, steps)
+			}
+		}
 	}
 
-	return s1, s2, nil
+	return lcm
+}
+
+// / stepstoZ finds the steps one ghost takes to find a node ending in Z
+func stepsToZ(directions []byte, nodes map[key]val, k key) int {
+	steps := 0
+
+	i := 0
+	for {
+		// traverse each direction
+		switch directions[i] {
+		case 'L':
+			k = nodes[k].left()
+		case 'R':
+			k = nodes[k].right()
+		}
+
+		steps++
+
+		if (k & 0xFF) == 'Z' {
+			break
+		}
+
+		// directions loop
+		i++
+		if i >= len(directions) {
+			i = 0
+		}
+	}
+
+	return steps
 }
