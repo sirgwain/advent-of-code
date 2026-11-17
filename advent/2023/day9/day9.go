@@ -36,11 +36,17 @@ func (d *Day) Run(input []byte) (int, int, error) {
 			numbers = append(numbers, num)
 		}
 
-		d.processedNumbers = append([][]int{}, numbers)
-		nextIncrement := d.processNumbers(numbers)
-		d.processedNumbers[0] = append(d.processedNumbers[0], numbers[len(numbers)-1]+nextIncrement)
+		if advent.Viz.Enabled {
+			d.processedNumbers = append([][]int{}, numbers)
+		}
+		l, r := d.processNumbers(numbers)
+		if advent.Viz.Enabled {
+			d.processedNumbers[0] = append(d.processedNumbers[0], numbers[len(numbers)-1]+r)
+			d.processedNumbers[0] = append([]int{numbers[0] - l}, d.processedNumbers[0]...)
+		}
 
-		s1 += numbers[len(numbers)-1] + nextIncrement
+		s1 += numbers[len(numbers)-1] + r
+		s2 += numbers[0] - l
 
 		if advent.Viz.Enabled {
 			d.view()
@@ -57,7 +63,8 @@ func (d *Day) view() {
 		for step, processed := range d.processedNumbers {
 			// print the zeros
 			fmt.Printf("%s", strings.Repeat(" ", step))
-			for i := 0; i < len(processed)-1; i++ {
+			fmt.Printf("%s", nextIncrementStyle.Render(fmt.Sprintf("%d ", processed[0])))
+			for i := 1; i < len(processed)-1; i++ {
 				fmt.Printf("%d ", processed[i])
 			}
 			fmt.Printf("%s", nextIncrementStyle.Render(fmt.Sprintf("%d", processed[len(processed)-1])))
@@ -66,7 +73,7 @@ func (d *Day) view() {
 	}
 }
 
-func (d *Day) processNumbers(numbers []int) int {
+func (d *Day) processNumbers(numbers []int) (l, r int) {
 	processed := make([]int, len(numbers)-1)
 	allZero := true
 	for i := 1; i < len(numbers); i++ {
@@ -78,15 +85,23 @@ func (d *Day) processNumbers(numbers []int) int {
 
 	// record this for viewing
 	step := len(d.processedNumbers)
-	d.processedNumbers = append(d.processedNumbers, processed)
-
-	if allZero {
-		d.processedNumbers[step] = append(d.processedNumbers[step], 0)
-		return 0
+	if advent.Viz.Enabled {
+		d.processedNumbers = append(d.processedNumbers, processed)
 	}
 
-	next := processed[len(processed)-1] + d.processNumbers(processed)
-	d.processedNumbers[step] = append(d.processedNumbers[step], next)
+	if allZero {
+		// add 0 ... 0 to the debug lists
+		if advent.Viz.Enabled {
+			d.processedNumbers[step] = append([]int{0}, append(d.processedNumbers[step], 0)...)
+		}
+		return 0, 0
+	}
 
-	return next
+	l, r = d.processNumbers(processed)
+	r += processed[len(processed)-1]
+	l = processed[0] - l
+	if advent.Viz.Enabled {
+		d.processedNumbers[step] = append([]int{l}, append(d.processedNumbers[step], r)...)
+	}
+	return l, r
 }
