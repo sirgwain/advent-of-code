@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/phsym/console-slog v0.3.1
 	github.com/spf13/cobra v1.10.2
+	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
 	golang.org/x/text v0.44.0
 	golang.org/x/tools v0.52.0
 )

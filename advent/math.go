@@ -1,5 +1,7 @@
 package advent
 
+import "golang.org/x/exp/constraints"
+
 // Greatest common denominator
 func GCD(a, b int) int {
 	for b != 0 {
@@ -11,4 +13,11 @@ func GCD(a, b int) int {
 // Least common multiple
 func LCM(a, b int) int {
 	return a / GCD(a, b) * b
+}
+
+func Abs[T constraints.Integer | constraints.Float](num T) T {
+	if num < 0 {
+		return -num
+	}
+	return num
 }
