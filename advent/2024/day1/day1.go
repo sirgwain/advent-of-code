@@ -14,15 +14,20 @@ type Day struct {
 func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 
-	n := bytes.Count(input, []byte{'\n'}) + 1
-	nums1, nums2 := make([]int, 0, n), make([]int, 0, n)
-	for line := range bytes.SplitSeq(bytes.TrimSpace(input), []byte{'\n'}) {
-		// lines are numbers separated by 3 spaces
-		// 37033   48086
-		n1, len := advent.Atoi(line)
-		n2, _ := advent.Atoi(line[len+3:])
-		nums1 = append(nums1, n1)
-		nums2 = append(nums2, n2)
+	// every line is two same-width numbers separated by 3 spaces, plus '\n':
+	// 37033   48086
+	// so line i starts at i*stride and we never have to search for newlines.
+	numWidth := bytes.IndexByte(input, ' ')
+	stride := 2*numWidth + 4
+	n := (len(input) + 1) / stride // +1 in case the last line has no '\n'
+
+	// one allocation call shared between two number lists
+	buf := make([]int, 2*n)
+	nums1, nums2 := buf[:n], buf[n:]
+	for i := range n {
+		line := input[i*stride:]
+		nums1[i] = advent.AtoiFixed(line[:numWidth])
+		nums2[i] = advent.AtoiFixed(line[numWidth+3 : 2*numWidth+3])
 	}
 
 	// part 1, sort the lists and add up the distance
