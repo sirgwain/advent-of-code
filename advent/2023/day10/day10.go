@@ -42,6 +42,17 @@ const (
 	bStart byte = 'S' // ┼
 )
 
+// mapping of byte to directions
+var pipeDirs = [256]dir{
+	bNS:    dirNS,
+	bEW:    dirEW,
+	bNE:    dirNE,
+	bNW:    dirNW,
+	bSW:    dirSW,
+	bSE:    dirSE,
+	bStart: dirAll,
+}
+
 func (d dir) yoff() int {
 	switch d {
 	case dirN:
@@ -121,24 +132,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 	// make a copy of the board with directions
 	for y := range board {
 		for x := 0; x < len(board[y]); x++ {
-			switch board[y][x] {
-			case bNS:
-				dirBoard[y][x] = dirNS
-			case bEW:
-				dirBoard[y][x] = dirEW
-			case bNE:
-				dirBoard[y][x] = dirNE
-			case bNW:
-				dirBoard[y][x] = dirNW
-			case bSW:
-				dirBoard[y][x] = dirSW
-			case bSE:
-				dirBoard[y][x] = dirSE
-			case bStart:
-				dirBoard[y][x] = dirAll
-			default:
-				dirBoard[y][x] = 0
-			}
+			dirBoard[y][x] = pipeDirs[board[y][x]]
 		}
 	}
 	sx, sy := advent.FindValue(dirBoard, dirAll)
@@ -214,7 +208,6 @@ func followPipe(sx, sy int, board [][]dir) int {
 		// 0b0101 (NS) &^ 0b0100 (S) = 0b0001 (N)
 		heading = pipe &^ heading.opposite()
 	}
-
 }
 
 // view returns the board as a colored pretty string like

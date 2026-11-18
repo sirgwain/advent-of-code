@@ -10,9 +10,12 @@ func ValidPosition(p Point, width, height int) bool {
 }
 
 func MakeBoard[T any](width, height int) [][]T {
+	// allocate the whole board (like we would with a stream of bytes)
+	cells := make([]T, width*height)
 	board := make([][]T, height)
-	for y := range height {
-		board[y] = make([]T, width)
+	for y := range board {
+		// each row of the board is a slice of the backing data
+		board[y] = cells[y*width : (y+1)*width : (y+1)*width]
 	}
 	return board
 }
