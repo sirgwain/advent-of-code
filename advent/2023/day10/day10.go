@@ -145,22 +145,19 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 	// find the real shape of the starting point
 	dirs := [4]dir{dirN, dirE, dirS, dirW}
-	for _, d := range dirs {
-		steps := followPipe(d.opposite(), 1, sx+d.xoff(), sy+d.yoff(), dirBoard)
-		if steps > 0 {
-			s1 = steps / 2
-			break
-		}
-	}
-
-	// set the starting shape
 	var startShape dir
 	for _, d := range dirs {
+		// if the adjacent node has an incoming edge to match, include that direction in the starting shape
 		if (advent.GetBoardValue(sx+d.xoff(), sy+d.yoff(), dirBoard) & d.opposite()) > 0 {
 			startShape |= d
 		}
 	}
+
+	// the starting shape is always part of the board
 	dirBoard[sy][sx] = startShape | dirLoop
+
+	// halfway point along the loop is solution 1
+	s1 = followPipe(sx, sy, dirBoard) / 2
 
 	for y := range dirBoard {
 		// imagine a ray shooting just above the middle of the board square
@@ -174,7 +171,9 @@ func (d *Day) Run(input []byte) (int, int, error) {
 				}
 				continue
 			}
+
 			if inside {
+				// every non loop square inside the polygon is counted for solution 2
 				s2++
 				dirBoard[y][x] |= dirInLoop
 			} else {
@@ -192,31 +191,30 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 // followPipe recursively follows a pipe from a direction through its end
 // if the pipe has no input from the from direction, return 0
-func followPipe(from dir, step, sx, sy int, board [][]dir) int {
-	pipe := advent.GetBoardValue(sx, sy, board)
+func followPipe(sx, sy int, board [][]dir) int {
+	heading := board[sy][sx] & -board[sy][sx]
 
-	if pipe == dirAll {
-		// we reached the start again, drop
-		return step
+	x, y := sx, sy
+	steps := 0
+	for {
+		// check the next square
+		x, y = x+heading.xoff(), y+heading.yoff()
+		steps++
+
+		if x == sx && y == sy {
+			// back to the start, all done!
+			return steps
+		}
+
+		pipe := board[y][x]
+		board[y][x] |= dirLoop
+
+		// if the pipe is NS and we are heading N (coming from S), find the N endpoint as our new heading
+		// AND NOT bitwise op
+		// 0b0101 (NS) &^ 0b0100 (S) = 0b0001 (N)
+		heading = pipe &^ heading.opposite()
 	}
 
-	// if our current pipe has no incoming from the from dir
-	// i.e. we are coming from the S and this pipe has no S part, we are done
-	if (pipe & from) == 0 {
-		return 0
-	}
-
-	// if the pipe is NS and we are coming from S, find the N endpoint
-	// AND NOT bitwise op
-	// 0b0101 (NS) &^ 0b0100 (S) = 0b0001 (N)
-	end := pipe &^ from
-
-	result := followPipe(end.opposite(), step+1, sx+end.xoff(), sy+end.yoff(), board)
-	if result > 0 {
-		board[sy][sx] |= dirLoop
-	}
-
-	return result
 }
 
 // view returns the board as a colored pretty string like
