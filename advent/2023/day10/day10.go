@@ -10,21 +10,19 @@ import (
 )
 
 var correctStyle = lipgloss.NewStyle().Foreground(color.BrightGreen82)
-var incorrectStyle = lipgloss.NewStyle().Foreground(color.BrightRed124)
 var startStyle = lipgloss.NewStyle().Foreground(color.BlazeOrange202)
-var light = lipgloss.NewStyle().Foreground(color.BrightGreen82).Render("●")
+var fill = lipgloss.NewStyle().Foreground(color.BrightGreen82).Render("●")
 
-type dir uint
+type dir byte
 
 const (
-	dirN       dir = 1 << 1  // 0b000_000_010
-	dirW       dir = 1 << 3  // 0b000_001_000
-	dirCenter  dir = 1 << 4  // 0b000_010_000
-	dirE       dir = 1 << 5  // 0b000_100_000
-	dirS       dir = 1 << 7  // 0b010_000_000
-	dirLoop    dir = 1 << 9  // flag, outside the 3x3 grid
-	dirOutLoop dir = 1 << 10 // flag, outside the 3x3 grid
-	dirInLoop  dir = 1 << 11 // flag, outside the 3x3 grid
+	dirN       dir = 1 << 1
+	dirW       dir = 1 << 2
+	dirE       dir = 1 << 3
+	dirS       dir = 1 << 4
+	dirLoop    dir = 1 << 5
+	dirOutLoop dir = 1 << 6
+	dirInLoop  dir = 1 << 7
 	dirNS          = dirN | dirS
 	dirEW          = dirE | dirW
 	dirNE          = dirN | dirE
@@ -145,6 +143,7 @@ func (d *Day) Run(input []byte) (int, int, error) {
 	}
 	sx, sy := advent.FindValue(dirBoard, dirAll)
 
+	// find the real shape of the starting point
 	dirs := [4]dir{dirN, dirE, dirS, dirW}
 	for _, d := range dirs {
 		steps := followPipe(d.opposite(), 1, sx+d.xoff(), sy+d.yoff(), dirBoard)
@@ -154,31 +153,30 @@ func (d *Day) Run(input []byte) (int, int, error) {
 		}
 	}
 
-	if advent.Viz.Enabled {
-		fmt.Println(view(dirBoard))
+	// set the starting shape
+	var startShape dir
+	for _, d := range dirs {
+		if (advent.GetBoardValue(sx+d.xoff(), sy+d.yoff(), dirBoard) & d.opposite()) > 0 {
+			startShape |= d
+		}
 	}
-
-	expandedBoard := expandBoard(dirBoard)
-	floodFill(advent.Point{X: 0, Y: 0}, expandedBoard)
+	dirBoard[sy][sx] = startShape | dirLoop
 
 	for y := range dirBoard {
+		// imagine a ray shooting just above the middle of the board square
+		// every north edge (│└┘) flips whether you are inside or outside the loop polygon
+		inside := false
 		for x := 0; x < len(dirBoard[y]); x++ {
 			if (dirBoard[y][x] & dirLoop) > 0 {
+				// loop piece with a north edge, flip inside/outside flag
+				if (dirBoard[y][x] & dirN) > 0 {
+					inside = !inside
+				}
 				continue
 			}
-			allZero := true
-		zeroCheck:
-			for y1 := range 3 {
-				for x1 := range 3 {
-					if expandedBoard[y*3+y1][x*3+x1] != 0 {
-						allZero = false
-						break zeroCheck
-					}
-				}
-			}
-			if allZero {
-				dirBoard[y][x] |= dirInLoop
+			if inside {
 				s2++
+				dirBoard[y][x] |= dirInLoop
 			} else {
 				dirBoard[y][x] |= dirOutLoop
 			}
@@ -187,17 +185,6 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 	if advent.Viz.Enabled {
 		fmt.Println(view(dirBoard))
-
-		// drawBoardCell := func(c byte) string {
-		// 	if c == 0 {
-		// 		return "."
-		// 	}
-		// 	if c == '#' {
-		// 		return light
-		// 	}
-		// 	return string(c)
-		// }
-		// fmt.Println(advent.BoardToString(expandedBoard, drawBoardCell))
 	}
 
 	return s1, s2, nil
@@ -232,66 +219,6 @@ func followPipe(from dir, step, sx, sy int, board [][]dir) int {
 	return result
 }
 
-// expandBoard expands a resolved board into a byte board for filling
-// ┐ becomes this 3x3 grid
-//
-//	012
-//
-// 0 ...
-// 1 ##.
-// 2 .#.
-func expandBoard(board [][]dir) [][]byte {
-	out := advent.MakeBoard[byte](len(board[0])*3, len(board)*3)
-
-	for y := range board {
-		for x := 0; x < len(board[y]); x++ {
-			// clear this grid
-			if (board[y][x] & dirLoop) == 0 {
-				continue
-			}
-
-			// center is always a wall for edges
-			out[y*3+1][x*3+1] = '#'
-
-			val := (board[y][x] &^ dirLoop)
-			for y1 := range 3 {
-				for x1 := range 3 {
-					if (val & (1 << (y1*3 + x1))) > 0 {
-						out[y*3+y1][x*3+x1] = '#'
-					}
-				}
-			}
-		}
-	}
-	return out
-}
-
-// floodFill fills all empty spaces from a start point
-func floodFill(start advent.Point, board [][]byte) {
-	work := []advent.Point{start}
-	w := len(board[0])
-	h := len(board)
-	for len(work) > 0 {
-		p := work[len(work)-1]
-		work = work[:len(work)-1]
-
-		if p.X < 0 || p.X >= w || p.Y < 0 || p.Y >= h {
-			continue
-		}
-		if board[p.Y][p.X] != 0 {
-			continue
-		}
-
-		board[p.Y][p.X] = 'O'
-		work = append(work,
-			advent.Point{X: p.X, Y: p.Y + 1},
-			advent.Point{X: p.X + 1, Y: p.Y},
-			advent.Point{X: p.X, Y: p.Y - 1},
-			advent.Point{X: p.X - 1, Y: p.Y},
-		)
-	}
-}
-
 // view returns the board as a colored pretty string like
 // .....
 // .┼─┐.
@@ -314,7 +241,7 @@ func view(board [][]dir) string {
 			}
 
 			if (board[y][x] & dirInLoop) > 0 {
-				sb.WriteString(light)
+				sb.WriteString(fill)
 				continue
 			}
 
