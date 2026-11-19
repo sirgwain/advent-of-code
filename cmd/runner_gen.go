@@ -34,6 +34,9 @@ import (
 	y2023d8 "github.com/sirgwain/advent-of-code/advent/2023/day8"
 	y2023d9 "github.com/sirgwain/advent-of-code/advent/2023/day9"
 	y2024d1 "github.com/sirgwain/advent-of-code/advent/2024/day1"
+	y2024d2 "github.com/sirgwain/advent-of-code/advent/2024/day2"
+	y2024d3 "github.com/sirgwain/advent-of-code/advent/2024/day3"
+	y2024d4 "github.com/sirgwain/advent-of-code/advent/2024/day4"
 	y2025d1 "github.com/sirgwain/advent-of-code/advent/2025/day1"
 	"strconv"
 )
@@ -172,6 +175,15 @@ func getRunner(year, day int) (dayRunner, error) {
 		case 1:
 			impl := &y2024d1.Day{}
 			r = impl
+		case 2:
+			impl := &y2024d2.Day{}
+			r = impl
+		case 3:
+			impl := &y2024d3.Day{}
+			r = impl
+		case 4:
+			impl := &y2024d4.Day{}
+			r = impl
 		}
 	case 2025:
 		switch day {
@@ -188,7 +200,7 @@ func getRunner(year, day int) (dayRunner, error) {
 }
 
 func getAllRunners() []dayRunner {
-	runners := make([]dayRunner, 0, 31)
+	runners := make([]dayRunner, 0, 34)
 	{
 		impl := &y2015d1.Day{}
 		var r runner
@@ -398,6 +410,27 @@ func getAllRunners() []dayRunner {
 		var rs runnerS
 		r = impl
 		runners = append(runners, dayRunner{r: r, rs: rs, year: 2024, day: 1})
+	}
+	{
+		impl := &y2024d2.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2024, day: 2})
+	}
+	{
+		impl := &y2024d3.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2024, day: 3})
+	}
+	{
+		impl := &y2024d4.Day{}
+		var r runner
+		var rs runnerS
+		r = impl
+		runners = append(runners, dayRunner{r: r, rs: rs, year: 2024, day: 4})
 	}
 	{
 		impl := &y2025d1.Day{}
