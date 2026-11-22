@@ -12,10 +12,18 @@ func solve(input []byte) (s1, s2 int) {
 	var num int
 
 	for _, b := range input {
-		digit := int(b-'0')
+		digit := int(b - '0')
 
 		if digit > 9 {
-			s1 += (num / 3) - 2
+			fuel := (num / 3) - 2
+			s1 += fuel
+			s2 += fuel
+
+			for fuel > 6 {
+				fuel = fuel/3 - 2
+				s2 += fuel
+			}
+
 			if advent.Viz.Enabled {
 				fmt.Printf("%d / 3 - 2 = %d\n", num, (num/3)-2)
 			}
