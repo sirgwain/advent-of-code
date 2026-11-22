@@ -8,11 +8,17 @@ import (
 	"github.com/sirgwain/advent-of-code/advent"
 )
 
+// keep a grid of 512x512 bytes to track directions
+var grid [512*512]byte
+
 func solve(input []byte) (s1, s2 int) {
+	for i := range grid {		
+		grid[i] = 0
+	}
+
 	// start facing north
 	hx, hy := 0, 1
 	pt := advent.Point{}
-	ptCounts := make(map[advent.Point]int, 1024)
 	for i := 0; i < len(input); i++ {
 		switch input[i] {
 		case 'R':
@@ -31,8 +37,9 @@ func solve(input []byte) (s1, s2 int) {
 
 			for j := 1; j <= dist; j++ {
 				step := advent.Point{X: pt.X + hx*j, Y: pt.Y + hy*j}
-				ptCounts[step]++
-				if ptCounts[step] == 2 && s2 == 0 {
+				gridLoc := (step.Y+256)*512 + step.X+256
+				grid[gridLoc]++
+				if grid[gridLoc] == 2 && s2 == 0 {
 					s2 = advent.Abs(step.X) + advent.Abs(step.Y)
 					if advent.Viz.Enabled {
 						fmt.Printf("First duplicate point (%d,%d) %d away\n", step.X, step.Y, s2)
