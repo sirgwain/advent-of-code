@@ -21,3 +21,7 @@ func Abs[T constraints.Integer | constraints.Float](num T) T {
 	}
 	return num
 }
+
+func Clamp(n, mn, mx int) int {
+	return max(mn, min(mx, n))
+}
