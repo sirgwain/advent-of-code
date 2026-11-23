@@ -8,8 +8,8 @@ import (
 	"github.com/sirgwain/advent-of-code/advent"
 )
 
-// keep a grid of 512x512 bytes to track directions
-var grid [512 * 512]byte
+// keep a grid of 512x512 bits to track directions
+var grid [512 * 512/64]uint64
 
 func solve(input []byte) (s1, s2 int) {
 	for i := range grid {
@@ -19,9 +19,14 @@ func solve(input []byte) (s1, s2 int) {
 	// start facing north
 	hx, hy := 0, 1
 	dist := 0
+
+	gridLoc := 256*512 + 256
+	grid[gridLoc>>63] = 1 // origin is already visited
+	found := false
+
 	pt := advent.Point{}
 	var dir *byte
-	for i := 0; i < len(input); i++ {
+	for i := range input {
 		switch input[i] {
 		case 'R':
 			hx, hy = hy, -hx
@@ -30,15 +35,26 @@ func solve(input []byte) (s1, s2 int) {
 			hx, hy = -hy, hx
 			dir = &input[i]
 		case ' ', '\n':
-			for j := 1; j <= dist; j++ {
-				step := advent.Point{X: pt.X + hx*j, Y: pt.Y + hy*j}
-				gridLoc := (step.Y+256)*512 + step.X + 256
-				grid[gridLoc]++
-				if grid[gridLoc] == 2 && s2 == 0 {
-					s2 = advent.Abs(step.X) + advent.Abs(step.Y)
-					if advent.Viz.Enabled {
-						fmt.Printf("First duplicate point (%d,%d) %d away\n", step.X, step.Y, s2)
+			if !found {
+				// step through each grid point until we find a duplicate
+				step := pt
+				stride := hx + hy*512
+
+				for j := 0; j < dist; j++ {
+					step.X += hx
+					step.Y += hy
+					gridLoc += stride
+
+					word := gridLoc>>6
+					mask := uint64(1) << uint(gridLoc&63)
+
+					if grid[word]&mask != 0 {
+						s2 = advent.Abs(step.X) + advent.Abs(step.Y)
+						found = true
+						break
 					}
+
+					grid[word] |= mask
 				}
 			}
 
