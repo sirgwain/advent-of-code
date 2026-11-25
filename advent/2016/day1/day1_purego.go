@@ -8,26 +8,25 @@ import (
 	"github.com/sirgwain/advent-of-code/advent"
 )
 
-// keep a grid of 512x512 bits to track directions
-var grid [512 * 512/64]uint64
-
 func solve(input []byte) (s1, s2 int) {
-	for i := range grid {
-		grid[i] = 0
-	}
+	clear(grid[:])
 
 	// start facing north
 	hx, hy := 0, 1
 	dist := 0
 
 	gridLoc := 256*512 + 256
-	grid[gridLoc>>63] = 1 // origin is already visited
+	grid[gridLoc>>6] = 1 // origin is already visited
 	found := false
 
 	pt := advent.Point{}
 	var dir *byte
-	for i := range input {
-		switch input[i] {
+	for i := 0; i < len(input); i++ {
+		c := byte('\n')
+		if i < len(input) {
+			c = input[i]
+		}
+		switch c {
 		case 'R':
 			hx, hy = hy, -hx
 			dir = &input[i]
@@ -45,7 +44,7 @@ func solve(input []byte) (s1, s2 int) {
 					step.Y += hy
 					gridLoc += stride
 
-					word := gridLoc>>6
+					word := gridLoc >> 6
 					mask := uint64(1) << uint(gridLoc&63)
 
 					if grid[word]&mask != 0 {
