@@ -13,74 +13,85 @@
 //  s2+32(FP)
 //
 // registers:
-// R0 input
-// R1 i = len(input)
-// R2 b byte
-// R3 num
-// R4 digit
-// R5 fuel
-// R6 s1
-// R7 s2
-// R10 10 (digit constant)
+// note R16,R17 are scratch that could be blown away by CALLs
+// R18, R27+ are reserved
+// ptr input
+// n i = len(input)
+// b b byte
+// num num
+// digit digit
+// fuel fuel
+// s1r s1
+// s2r s2
+// k10 10 (digit constant)
+#define ptr         R0  // input pointer
+#define n           R1  // remaining input bytes to parse
+#define b           R2  // current byte from input
+#define s1r         R3  // solution1 register
+#define s2r         R4  // solution2 register
+#define num         R5
+#define digit       R6
+#define fuel        R7
+#define k10         R10 // remaining input bytes to parse
 
 TEXT ·solve(SB), NOSPLIT, $0-40
     // load the input slice
-    MOVD input_base+0(FP), R0    // pointer into R0
-    MOVD input_len+8(FP), R1    // length into R1
+    MOVD input_base+0(FP), ptr    // pointer into ptr
+    MOVD input_len+8(FP), n    // length into n
 
     // init counters
-    MOVD ZR, R3 // num = 0
-    MOVD ZR, R4 // digit = 0
-    MOVD ZR, R6 // s1 = 0
-    MOVD ZR, R7 // s2 = 0
-    MOVD $10, R10 // atoi 10x multiplier
+    MOVD ZR, num // num = 0
+    MOVD ZR, digit // digit = 0
+    MOVD ZR, s1r // s1 = 0
+    MOVD ZR, s2r // s2 = 0
+    MOVD $10, k10 // atoi 10x multiplier
     MOVD $3, R11 // fuel / 3 const
 
 loop:
-    CBZ R1, done // compare-branch-zero if R1 is down to 0
+    CBZ n, done // compare-branch-zero if n is down to 0
 
     // Read a byte
-    MOVBU (R0), R2 // b = *input
+    MOVBU (ptr), b // b = *input
 
-    ADD $1, R0, R0 // input++
-    SUB $1, R1, R1 // R1--
+    ADD $1, ptr, ptr // input++
+    SUB $1, n, n // n--
 
-    SUB $'0', R2, R4 // digit = b - '0'
-    CMP $9, R4
+    SUB $'0', b, digit // digit = b - '0'
+    CMP $9, digit
     BHI calcfuel // if digit > 9 goto calcfuel
 
-    MADD R10, R4, R3, R3 // num = num*10 + digit
+    MADD k10, digit, num, num // num = num*10 + digit
     B loop
 
 calcfuel:
-    CBZ R3, loop // if num == 0 (like a newline), skip it
+    CBZ num, loop // if num == 0 (like a newline), skip it
 
-    UDIV R11, R3, R5 // fuel = num / 3
-    SUB $2, R5, R5 // fuel = fuel - 2
+    UDIV R11, num, fuel // fuel = num / 3
+    SUB $2, fuel, fuel // fuel = fuel - 2
 
-    ADD R5, R6, R6 // s1 += fuel
-    ADD R5, R7, R7 // s2 += fuel
+    ADD fuel, s1r, s1r // s1 += fuel
+    ADD fuel, s2r, s2r // s2 += fuel
 
-    CMP $6, R5
+    CMP $6, fuel
     BGT calcfuelfuel
 
-    MOVD ZR, R3 // num = 0
+    MOVD ZR, num // num = 0
     B loop
 
 calcfuelfuel:
-    UDIV R11, R5, R5 // fuel = fuel / 3
-    SUB $2, R5, R5 // fuel = fuel - 2
-    ADD R5, R7, R7 // s2 += fuel
+    UDIV R11, fuel, fuel // fuel = fuel / 3
+    SUB $2, fuel, fuel // fuel = fuel - 2
+    ADD fuel, s2r, s2r // s2 += fuel
 
     // keep looping while fuel > 6
-    CMP $6, R5
+    CMP $6, fuel
     BGT calcfuelfuel // if fuel > 6 goto calccalcfuel
 
-    MOVD ZR, R3 // num = 0
+    MOVD ZR, num // num = 0
     B loop
 done:
-    CBNZ R3, calcfuel   // flush final number if input lacks trailing \n
-    MOVD R6, s1+24(FP)
-    MOVD R7, s2+32(FP)
+    CBNZ num, calcfuel   // flush final number if input lacks trailing \n
+    MOVD s1r, s1+24(FP)
+    MOVD s2r, s2+32(FP)
     RET
 

@@ -17,13 +17,13 @@
 // R18, R27+ are reserved
 #define ptr         R0  // input pointer
 #define n           R1  // remaining input bytes to parse
-#define x           R2  // current x loc
-#define y           R3  // current y loc
-#define hx          R4  // x heading
-#define hy          R5  // y heading
-#define s1r         R6  // s1 accumulator
-#define s2r         R7  // s2 accumulator
-#define b           R8  // current byte from input
+#define b           R2  // current byte from input
+#define s1r         R3  // s1 accumulator
+#define s2r         R4  // s2 accumulator
+#define x           R5  // current x loc
+#define y           R6  // current y loc
+#define hx          R7  // x heading
+#define hy          R8  // y heading
 #define digit       R9  // digit from *input for itoa
 #define dist        R10 // dist travelled from R*/L* input
 #define gridptr     R11 // pointer into the grid for tracking movement
@@ -147,7 +147,8 @@ steploop:
     ADD stride, gridLoc, gridLoc // gridLoc = gridLoc + stride
 
     LSR $6, gridLoc, word // word = gridLoc>>6
-    LSL gridLoc, k1, mask // mask = 1 << gridLoc&63 (registers already drop the bits we AND away)
+    // ARM64 uses only the low 6 bits of the gridLoc register for shift count.
+    LSL gridLoc, k1, mask // mask = 1 << (gridLoc&63)
 
     MOVD (gridptr)(word<<3), tmp // tmp = grid[word]
     TST mask, tmp // if tmp & mask

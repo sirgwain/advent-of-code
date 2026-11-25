@@ -23,13 +23,13 @@
 
 TEXT ·solve(SB), NOSPLIT, $0-40
     // load the input slice
-    MOVD input_base+0(FP), ptr    // pointer into ptr
-    MOVD input_len+8(FP), n    // length into n
+    MOVD input_base+0(FP), ptr
+    MOVD input_len+8(FP), n
 
     // init counters
-    MOVD ZR, floor // currentFloor = 0
-    MOVD ZR, pos // position = 0
-    MOVD ZR, basement // firstBasementPosition = 0
+    MOVD ZR, floor
+    MOVD ZR, pos
+    MOVD ZR, basement
 
 loop:
     CBZ n, done // compare-branch-zero if n is down to 0
@@ -50,14 +50,14 @@ loop:
     BNE loop // if b != ')' goto loop
     // fallthrough to down
 down:
-    SUB $1, floor, floor // floor-- (currentFloor--)
+    SUB $1, floor, floor // floor--
 
     // if we already found the basement, skip this
-    CBNZ basement, loop // if basement != 0 (firstBasementPosition != 0)
+    CBNZ basement, loop // if basement != 0 goto loop
 
     // is the floor -1?
     CMP $-1, floor 
-    BNE loop // if floor != -1 goto loop (currentFloor != -1)
+    BNE loop // if floor != -1 goto loop
 
     // save the first basement
     MOVD pos, basement // basement = pos
