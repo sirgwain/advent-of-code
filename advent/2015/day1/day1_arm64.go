@@ -2,4 +2,4 @@
 package day1
 
 //go:noescape
-func solve(input []byte) (floor, basement int)
+func solve(input []byte) (s1, s2 int)
