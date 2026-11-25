@@ -1,7 +1,7 @@
 //go:build arm64 && !purego
 
 #include "textflag.h"
-// func solve(input []byte) (floor int, basement int)
+// func solve(input []byte) (s1 int, s2 int)
 //
 // args:
 //  input+0(FP) = data pointer
@@ -20,7 +20,7 @@
 #define s2r             R4
 #define dial            R5
 #define start           R6
-#define sign            R7
+#define dir             R7
 #define digit           R8  // digit from *input for itoa
 #define num             R9  // current number
 #define k10             R10 // constant 10
@@ -39,35 +39,33 @@ TEXT ·solve(SB), NOSPLIT, $0-40
     MOVD ZR, s2r
     MOVD ZR, num
     MOVD $10, k10
-    MOVD $1, sign
 
 loop:
     CBZ n, done // compare-branch-zero if n is down to 0
 
-    // Read a byte
-    MOVBU (ptr), b // b = *input
-
-    ADD $1, ptr, ptr // input++
+    // read the direction
+    MOVBU.P 1(ptr), dir // dir = *input; input++ (dir is 'L' or 'R')
     SUB $1, n, n // n--
+    MOVD ZR, num
 
-    // L moves left, R moves right
-    CMP $'R', b 
-    BEQ right
-    CMP $'L', b 
-    BEQ left
-
-    // check for 0-9 chars, anything else is a newline
-    SUB $'0', b, digit // digit = *input - '0'
+digits:
+    // process digits
+    CBZ n, process
+    MOVBU.P 1(ptr), b // b = *input; input++
+    SUB $1, n, n // n--
+    SUB $'0', b, digit // digit = b - '0'
     CMP $9, digit
-    BHI process // if digit > 9 goto process
-
+    BHI process // if digit > 9, it's a newline, goto process
     MADD k10, digit, num, num  // num = num*10 + digit
-    
-    B loop
+    B digits
 
 process:
+    // L moves left, R moves right
+    CMP $'L', dir
+    BEQ left
+
+processAfterDir:
     MOVD dial, start // start = dial
-    MUL sign, num, num // num = num * multipler (i.e. -1/1)
     ADDS num, dial, dial // dial += num
 
     BLT rollleft
@@ -78,7 +76,7 @@ process:
     B countzeros
 
 rollleft:
-    // break out of the loop if dial is > 0
+    // break out of the loop if dial is >= 0
     CMP $0, dial
     BGE countzeros
 
@@ -94,18 +92,15 @@ rollleft:
     B rollleft
 
 rollright:
-    // brek out of the loop when we are < 100
+    // break out of the loop when we are < 100
     CMP $100, dial
     BLT countzeros
     SUBS $100, dial, dial // dial = dial -100
     CINC NE, s2r, s2r // s2r++ if dial != 0
     B rollright
 left:
-    MOVD $-1, sign // sign = -1
-    B loop
-right:
-    MOVD $1, sign // sign = 1
-    B loop
+    NEG num, num // num *= -1
+    B processAfterDir
 
 countzeros:
     // zero out the number to start the loop again
