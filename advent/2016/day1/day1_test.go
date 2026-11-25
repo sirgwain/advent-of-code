@@ -17,7 +17,6 @@ func TestDay_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// advent.Viz.Enabled = true
 			d := &Day{}
 			gots1, gots2, _ := d.Run([]byte(tt.name))
 			if gots1 != tt.wants1 {

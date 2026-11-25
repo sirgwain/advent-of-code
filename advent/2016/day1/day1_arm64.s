@@ -1,7 +1,7 @@
 //go:build arm64 && !purego
 
 #include "textflag.h"
-// func solve(input []byte) (s1 int, s2 int)
+// func solve(input []byte) (s1r int, s2r int)
 //
 // args:
 //  input+0(FP) = data pointer
@@ -13,65 +13,64 @@
 //  s2+32(FP)
 //
 // registers:
-// R0 input
-// R1 i = len(input)
-// R2 x
-// R3 y
-// R4 hx
-// R5 hy
-// R6 s1
-// R7 s2
-// R8 b byte (input value)
-// R9 digit (for itoa)
-// R10 10 constant for itoa
-// R11 dist (for itoa)
-// R12 grid
-// R13 512
-// R14 found
-// R15 stepX
-// R16 stepY
-// R17 stride
-// R19 gridLoc
-// R20 word i.e. gridLoc>>6
-// R21 1 constant for grid setting
-// R22 mask
-// R23 w for testing
-// R24 j
-//
-// Note: R18 is reserved, and R16,R17 are scratch registers, so CALL could change them
+// note R16,R17 are scratch that could be blown away by CALLs
+// R18, R27+ are reserved
+#define ptr         R0  // input pointer
+#define n           R1  // remaining input bytes to parse
+#define x           R2  // current x loc
+#define y           R3  // current y loc
+#define hx          R4  // x heading
+#define hy          R5  // y heading
+#define s1r         R6  // s1 accumulator
+#define s2r         R7  // s2 accumulator
+#define b           R8  // current byte from input
+#define digit       R9  // digit from *input for itoa
+#define dist        R10 // dist travelled from R*/L* input
+#define gridptr     R11 // pointer into the grid for tracking movement
+#define found       R12 // 1 if we found shortest overlap
+#define stepX       R13 
+#define stepY       R14
+#define stride      R15
+#define gridLoc     R19
+#define word        R20
+#define mask        R21
+#define j           R22
+#define k1          R23 // constant 1 for bit shifting
+#define k10         R24 // constant 10 value for MADD itoa calls
+#define tmp         R16
+
+// helper to ABS(reg) to set the reg to its absolute value
+#define ABS(r) CMP $0, r; CNEG LT, r, r
 
 TEXT ·solve(SB), NOSPLIT, $0-40
     // load the input slice
-    MOVD input_base+0(FP), R0    // pointer into R0
-    MOVD input_len+8(FP), R1    // length into R1
+    MOVD input_base+0(FP), ptr // ptr = input
+    MOVD input_len+8(FP), n    // n = len(input)
 
     // init counters
-    MOVD ZR, R2 // x = 0
-    MOVD ZR, R3 // y = 0
-    MOVD ZR, R4 // hx = 0
-    MOVD $1, R5 // hy = 1 - facing north
-    MOVD ZR, R6 // s1 = 0
-    MOVD ZR, R7 // s2 = 0
-    MOVD $10, R10 // atoi 10x multiplier
-    MOVD ZR, R11 // atoi = 0
-    MOVD ZR, R14 // found = 0
+    MOVD ZR, x // x = 0
+    MOVD ZR, y // y = 0
+    MOVD ZR, hx // hx = 0
+    MOVD $1, hy // hy = 1 - facing north
+    MOVD ZR, s1r // s1r = 0
+    MOVD ZR, s2r // s2r = 0
+    MOVD $10, k10 // atoi 10x multiplier
+    MOVD ZR, dist // atoi = 0
+    MOVD ZR, found // found = 0
 
-    MOVD $·grid(SB), R12
-    MOVD $512, R13
+    MOVD $·grid(SB), gridptr
+    MOVD gridptr, tmp
+    MOVD $512, j
 clear:
     // clear(grid[:])
-    // store zero register twice, then increment R12 by 16
+    // store zero register twice, then increment gridptr by 16
     // do this 4 times to clear 64 bytes, then decrement the counter and loop
-    STP.P (ZR, ZR), 16(R12)
-    STP.P (ZR, ZR), 16(R12)
-    STP.P (ZR, ZR), 16(R12)
-    STP.P (ZR, ZR), 16(R12)
-    SUB $1, R13
-    CBNZ R13, clear // keep going until we have looped 512 times to clear the whole grid
-
-    // reset the 512 constant, we reuse it while calculating stride
-    MOVD $512, R13
-    MOVD $·grid(SB), R12  // clear loop advanced R12, reset it
+    STP.P (ZR, ZR), 16(tmp)
+    STP.P (ZR, ZR), 16(tmp)
+    STP.P (ZR, ZR), 16(tmp)
+    STP.P (ZR, ZR), 16(tmp)
+    SUBS $1, j, j
+    BNE clear
 
     // setup starting grid
     // we want 
@@ -80,113 +79,105 @@ clear:
     // but since gridLoc starts as a constant, we just want grid[2052] = 1
     // because (256*512 + 256)/64 = 2052
     // we still need to keep gridLoc initialized for stepping later
-    MOVD $131328, R19 // gridLoc = 256*512 + 256
-    LSR $6, R19, R20 // R20 = gridLoc>>6
-    MOVD $1, R21 // R21 = 1
-    MOVD R21, ·grid+16416(SB)    // grid[2052] = 1
+    MOVD $131328, gridLoc // gridLoc = 256*512 + 256
+    LSR $6, gridLoc, word // word = gridLoc>>6
+    MOVD $1, k1 // k1 = 1
+    MOVD k1, ·grid+16416(SB)    // grid[2052] = 1
 
 loop:
-    CBZ R1, done // compare-branch-zero if R1 is down to 0
+    CBZ n, done // compare-branch-zero if n is down to 0
 
     // Read a byte
-    MOVBU.P 1(R0), R8 // b = *input++
+    MOVBU.P 1(ptr), b // b = *input++
 
-    SUB $1, R1, R1 // R1--
+    SUB $1, n, n // n--
  
-    CMP $'R', R8
+    CMP $'R', b
     BEQ right
 
-    CMP $'L', R8
+    CMP $'L', b
     BEQ left
 
-    CMP $',', R8
+    CMP $',', b
     BEQ process
 
     // check for 0-9 chars, skip anything else
-    SUB $'0', R8, R9 // digit = *input - '0'
-    CMP $9, R9
+    SUB $'0', b, digit // digit = *input - '0'
+    CMP $9, digit
     BHI loop // if digit > 9 goto loop
 
-    MADD R10, R9, R11, R11  // dist = dist*10 + digit
+    MADD k10, digit, dist, dist  // dist = dist*10 + digit
     
     B loop
 
 right:
     // rotate right, hx, hy = hy, -hx
-    NEG R4, R9 // R9 = -hx
-    MOVD R5, R4 // hx = hy
-    MOVD R9, R5 // hy = R9
+    NEG hx, digit // digit = -hx
+    MOVD hy, hx // hx = hy
+    MOVD digit, hy // hy = digit
     B loop
 left:
     // rotate left, hx, hy = -hy, hx
-    NEG R5, R9 // R9 = -hy
-    MOVD R4, R5 // hy = hx
-    MOVD R9, R4 // hx = R9
+    NEG hy, digit // digit = -hy
+    MOVD hx, hy // hy = hx
+    MOVD digit, hx // hx = digit
     B loop
 process:
-    CMP $0, R14
-    BEQ step // if !found goto step
+    CBZ found, step // if !found goto step
 
 processPostStep:
 
-    MADD R4, R2, R11, R2   // x = dist*hx + x
-    MADD R5, R3, R11, R3   // y = dist*hy + y
-    MOVD ZR, R11 // zero out the counter
+    MADD hx, x, dist, x   // x = dist*hx + x
+    MADD hy, y, dist, y   // y = dist*hy + y
+    MOVD ZR, dist // zero out the counter
     B loop
 
 step:
     // step through a movement and record it in the grid
-    MOVD R2, R15 // stepX = x
-    MOVD R3, R16 // stepY = y
+    MOVD x, stepX // stepX = x
+    MOVD y, stepY // stepY = y
 
-    MADD R13, R4, R5, R17 // stride = hy*512 + hx
-
-    MOVD $0, R24 // j = 0
+    ADD hy<<9, hx, stride // stride = hy*512 + hx
+    MOVD dist, j // j = dist
+    CBZ  j, processPostStep   // nothing to walk
 
 steploop:
-    // steploop loops through each value in dist
-    CMP R11, R24
-    BGE processPostStep // if j >= dist goto processPostStep
+    ADD hx, stepX, stepX // stepX = stepX + hx
+    ADD hy, stepY, stepY // stepY = stepY + hy
+    ADD stride, gridLoc, gridLoc // gridLoc = gridLoc + stride
 
-    ADD R4, R15, R15 // stepX = stepX + hx
-    ADD R5, R16, R16 // stepY = stepY + hy
-    ADD R17, R19, R19 // gridLoc = gridLoc + stride
+    LSR $6, gridLoc, word // word = gridLoc>>6
+    LSL gridLoc, k1, mask // mask = 1 << gridLoc&63 (registers already drop the bits we AND away)
 
-    LSR $6, R19, R20 // word = gridLoc>>6
-    LSL R19, R21, R22 // mask = 1 << gridLoc&63 (registers already drop the bits we AND away)
+    MOVD (gridptr)(word<<3), tmp // tmp = grid[word]
+    TST mask, tmp // if tmp & mask
+    BNE foundOverlap
+    ORR  mask, tmp, tmp        // tmp = tmp|mask
+    MOVD tmp, (gridptr)(word<<3) // grid[word] = tmp
 
-    MOVD (R12)(R20<<3), R23 // w = grid[word]
-    TST R22, R23 // if w & mask
-    BNE found
-    ORR  R22, R23, R23        // w = w|mask
-    MOVD R23, (R12)(R20<<3) // grid[word] = w
+    SUBS $1, j, j // j = j - 1
+    BNE steploop
+    B processPostStep
 
-    ADD $1, R24, R24 // j = j + 1
-    B steploop
+foundOverlap: 
 
-found: 
+    // s2r = |stepX| + |stepY|
+    ABS(stepX)
+    ABS(stepY)
+    ADD stepX, stepY, s2r // put s2r into s2r
 
-    // s2 = |stepX| + |stepY|
-    CMP $0, R15
-    CNEG LT, R15, R15 // x = |x|
-    CMP $0, R16
-    CNEG LT, R16, R16 // y = |y|
-    ADD R15, R16, R7 // put s2 into R7
-
-    MOVD R21, R14 // found = 1
+    MOVD k1, found // found = 1
     B processPostStep
 
 done:
-    CBNZ R11, process    // last move had no ',' after it, so walk it now
+    CBNZ dist, process    // last move had no ',' after it, so walk it now
     
-    // ret s1 = |x| + |y|
-    CMP $0, R2
-    CNEG LT, R2, R2 // x = |x|
-    CMP $0, R3
-    CNEG LT, R3, R3 // y = |y|
-    ADD R2, R3, R6 // put s1 into R6
+    // ret s1r = |x| + |y|
+    ABS(x)
+    ABS(y)
+    ADD x, y, s1r // put s1r into s1r
 
-    MOVD R6, s1+24(FP)
-    MOVD R7, s2+32(FP)
+    MOVD s1r, s1+24(FP)
+    MOVD s2r, s2+32(FP)
     RET
-
+    
