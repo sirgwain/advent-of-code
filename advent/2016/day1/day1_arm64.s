@@ -40,7 +40,9 @@
 #define tmp         R16
 
 // helper to ABS(reg) to set the reg to its absolute value
-#define ABS(r) CMP $0, r; CNEG LT, r, r
+#define ABS(r) \
+    CMP $0, r \
+    CNEG LT, r, r
 
 TEXT ·solve(SB), NOSPLIT, $0-40
     // load the input slice
