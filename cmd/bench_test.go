@@ -28,9 +28,9 @@ func BenchmarkDays(b *testing.B) {
 			buf := make([]byte, len(input))
 			b.ReportAllocs()
 
-			// Call the day's Run/RunS directly rather than dayRunner.Run, which
-			// converts int answers with strconv.Itoa and would add its
-			// allocations to every int day's numbers.
+			// Call the day's Run/RunS/RunX directly rather than dayRunner.Run,
+			// which formats int/uint answers as strings and would add those
+			// allocations to every day's numbers.
 			switch {
 			case r.r != nil:
 				for b.Loop() {
@@ -46,8 +46,15 @@ func BenchmarkDays(b *testing.B) {
 						b.Fatal(err)
 					}
 				}
+			case r.rx != nil:
+				for b.Loop() {
+					copy(buf, input)
+					if _, _, err := r.rx.RunX(buf); err != nil {
+						b.Fatal(err)
+					}
+				}
 			default:
-				b.Skip("no Run/RunS implementation")
+				b.Skip("no Run/RunS/RunX implementation")
 			}
 		})
 	}

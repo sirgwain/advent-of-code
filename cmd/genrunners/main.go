@@ -27,6 +27,7 @@ type entry struct {
 
 	HasRun  bool // implements runner (int,int)
 	HasRunS bool // implements runnerS (string,string)
+	HasRunX bool // implements runnerX (uint,uint), printed as hex
 }
 
 var (
@@ -56,18 +57,32 @@ type runnerS interface {
 	RunS([]byte) (string, string, error)
 }
 
+// runnerX is for days whose answers are hex numbers (e.g. 2016 day 2).
+type runnerX interface {
+	RunX([]byte) (uint, uint, error)
+}
+
 type dayRunner struct {
 	r    runner
 	rs   runnerS
+	rx   runnerX
 	year int
 	day  int
 }
 
-// Run returns string solutions for both kinds.
-// If the underlying day returns ints, they are converted with strconv.Itoa.
+// Run returns string solutions for all kinds.
+// Int answers are converted with strconv.Itoa; uint answers from runnerX are
+// formatted as uppercase hex.
 func (d dayRunner) Run(input []byte) (string, string, error) {
 	if d.rs != nil {
 		return d.rs.RunS(input)
+	}
+	if d.rx != nil {
+		a, b, err := d.rx.RunX(input)
+		if err != nil {
+			return "", "", err
+		}
+		return fmt.Sprintf("%X", a), fmt.Sprintf("%X", b), nil
 	}
 	if d.r != nil {
 		a, b, err := d.r.Run(input)
@@ -76,12 +91,13 @@ func (d dayRunner) Run(input []byte) (string, string, error) {
 		}
 		return strconv.Itoa(a), strconv.Itoa(b), nil
 	}
-	return "", "", fmt.Errorf("runner %d/%d has no Run/RunS implementation", d.year, d.day)
+	return "", "", fmt.Errorf("runner %d/%d has no Run/RunS/RunX implementation", d.year, d.day)
 }
 
 func getRunner(year, day int) (dayRunner, error) {
 	var r runner
 	var rs runnerS
+	var rx runnerX
 
 	switch year {
 {{- range .Groups }}
@@ -96,15 +112,18 @@ func getRunner(year, day int) (dayRunner, error) {
 			{{- if .HasRunS }}
 			rs = impl
 			{{- end }}
+			{{- if .HasRunX }}
+			rx = impl
+			{{- end }}
 		{{- end }}
 		}
 {{- end }}
 	}
 
-	if r == nil && rs == nil {
+	if r == nil && rs == nil && rx == nil {
 		return dayRunner{}, fmt.Errorf("day %d/%d not found", year, day)
 	}
-	return dayRunner{r: r, rs: rs, year: year, day: day}, nil
+	return dayRunner{r: r, rs: rs, rx: rx, year: year, day: day}, nil
 }
 
 func getAllRunners() []dayRunner {
@@ -115,13 +134,17 @@ func getAllRunners() []dayRunner {
 		impl := &{{ .Alias }}.Day{}
 		var r runner
 		var rs runnerS
+		var rx runnerX
 		{{- if .HasRun }}
 		r = impl
 		{{- end }}
 		{{- if .HasRunS }}
 		rs = impl
 		{{- end }}
-		runners = append(runners, dayRunner{r: r, rs: rs, year: {{ .Year }}, day: {{ .Day }}})
+		{{- if .HasRunX }}
+		rx = impl
+		{{- end }}
+		runners = append(runners, dayRunner{r: r, rs: rs, rx: rx, year: {{ .Year }}, day: {{ .Day }}})
 	}
 	{{- end }}
 {{- end }}
@@ -225,11 +248,11 @@ func discoverEntries(root, pkgbase, module string) ([]entry, error) {
 	// We type-check by import path (more reliable for go/packages), but keep dirs for debug if you want.
 	var entries []entry
 	for _, c := range candidates {
-		hasRun, hasRunS, err := packageHasRunnableDay(c.imp)
+		impls, err := packageHasRunnableDay(c.imp)
 		if err != nil {
 			continue
 		}
-		if !hasRun && !hasRunS {
+		if !impls.run && !impls.runS && !impls.runX {
 			continue
 		}
 
@@ -239,8 +262,9 @@ func discoverEntries(root, pkgbase, module string) ([]entry, error) {
 			Day:        c.day,
 			Alias:      alias,
 			ImportPath: c.imp,
-			HasRun:     hasRun,
-			HasRunS:    hasRunS,
+			HasRun:     impls.run,
+			HasRunS:    impls.runS,
+			HasRunX:    impls.runX,
 		})
 
 	}
@@ -255,73 +279,65 @@ func discoverEntries(root, pkgbase, module string) ([]entry, error) {
 	return entries, nil
 }
 
-func packageHasRunnableDay(importPath string) (hasRun bool, hasRunS bool, _ error) {
+type dayImpls struct {
+	run  bool // Run([]byte) (int, int, error)
+	runS bool // RunS([]byte) (string, string, error)
+	runX bool // RunX([]byte) (uint, uint, error)
+}
+
+func packageHasRunnableDay(importPath string) (dayImpls, error) {
 	cfg := &packages.Config{
 		Mode: packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax | packages.NeedName | packages.NeedFiles,
 	}
 	pkgs, err := packages.Load(cfg, importPath)
 	if err != nil {
-		return false, false, err
+		return dayImpls{}, err
 	}
 	if packages.PrintErrors(pkgs) > 0 {
-		return false, false, fmt.Errorf("package load errors for %s", importPath)
+		return dayImpls{}, fmt.Errorf("package load errors for %s", importPath)
 	}
 	if len(pkgs) == 0 || pkgs[0].Types == nil {
-		return false, false, fmt.Errorf("no types for %s", importPath)
+		return dayImpls{}, fmt.Errorf("no types for %s", importPath)
 	}
 	p := pkgs[0].Types
 
 	// Look for exported type "Day"
 	obj := p.Scope().Lookup("Day")
 	if obj == nil {
-		return false, false, nil
+		return dayImpls{}, nil
 	}
 	tn, ok := obj.(*types.TypeName)
 	if !ok {
-		return false, false, nil
+		return dayImpls{}, nil
 	}
 
 	ptrDay := types.NewPointer(tn.Type())
 	byteSlice := types.NewSlice(types.Typ[types.Byte])
 	errType := types.Universe.Lookup("error").Type()
 
-	// runner: Run([]byte) (int,int,error)
-	{
-		runSig := types.NewSignatureType(
+	// implements reports whether *Day has method name([]byte) (result, result, error)
+	implements := func(name string, result types.Type) bool {
+		sig := types.NewSignatureType(
 			nil, nil, nil,
 			types.NewTuple(types.NewVar(token.NoPos, nil, "", byteSlice)),
 			types.NewTuple(
-				types.NewVar(token.NoPos, nil, "", types.Typ[types.Int]),
-				types.NewVar(token.NoPos, nil, "", types.Typ[types.Int]),
+				types.NewVar(token.NoPos, nil, "", result),
+				types.NewVar(token.NoPos, nil, "", result),
 				types.NewVar(token.NoPos, nil, "", errType),
 			),
 			false,
 		)
-		runFn := types.NewFunc(token.NoPos, nil, "Run", runSig)
-		iface := types.NewInterfaceType([]*types.Func{runFn}, nil)
+		fn := types.NewFunc(token.NoPos, nil, name, sig)
+		iface := types.NewInterfaceType([]*types.Func{fn}, nil)
 		iface.Complete()
-		hasRun = types.Implements(ptrDay, iface)
+		return types.Implements(ptrDay, iface)
 	}
 
-	// runnerS: RunS([]byte) (string,string,error)
-	{
-		runSig := types.NewSignatureType(
-			nil, nil, nil,
-			types.NewTuple(types.NewVar(token.NoPos, nil, "", byteSlice)),
-			types.NewTuple(
-				types.NewVar(token.NoPos, nil, "", types.Typ[types.String]),
-				types.NewVar(token.NoPos, nil, "", types.Typ[types.String]),
-				types.NewVar(token.NoPos, nil, "", errType),
-			),
-			false,
-		)
-		runFn := types.NewFunc(token.NoPos, nil, "RunS", runSig)
-		iface := types.NewInterfaceType([]*types.Func{runFn}, nil)
-		iface.Complete()
-		hasRunS = types.Implements(ptrDay, iface)
-	}
-
-	return hasRun, hasRunS, nil
+	return dayImpls{
+		run:  implements("Run", types.Typ[types.Int]),
+		runS: implements("RunS", types.Typ[types.String]),
+		runX: implements("RunX", types.Typ[types.Uint]),
+	}, nil
 }
 
 func atoi(s string) int {

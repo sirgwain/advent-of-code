@@ -16,18 +16,16 @@ var dirs = [256][2]int{
 	'R': {1, 0},
 }
 
-func (d *Day) Run(input []byte) (int, int, error) {
-	var s1, s2 int
-
-	s1, s2 = solve(input)
-
+// RunX returns both codes as packed hex digits, one nibble per key. Part 1's
+// keys are all 1-9, so its hex form reads the same as the decimal code.
+func (d *Day) RunX(input []byte) (uint, uint, error) {
+	s1, s2 := solve(input)
 	return s1, s2, nil
 }
 
+func solve(input []byte) (s1, s2 uint) {
 
-func solve(input []byte) (s1, s2 int) {
-
-	var keypad = [5][5]int{
+	var keypad = [5][5]byte{
 		{0, 0, 0, 0, 0},
 		{0, 1, 2, 3, 0},
 		{0, 4, 5, 6, 0},
@@ -58,8 +56,8 @@ func solve(input []byte) (s1, s2 int) {
 
 		if b == '\n' {
 			// record number
-			s1 = s1*10 + int(keypad[y1][x1])
-			s2 = s2<<4 + int(keypadDiag[y2][x2])
+			s1 = s1<<4 | uint(keypad[y1][x1])
+			s2 = s2<<4 | uint(keypadDiag[y2][x2])
 			if advent.Viz.Enabled {
 				fmt.Printf("Record (%d,%d): %X\n", x1, y1, keypad[y1][x1])
 				fmt.Printf("Record (%d,%d): %X\n", x2, y2, keypadDiag[y2][x2])
