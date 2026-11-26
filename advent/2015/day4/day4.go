@@ -3,8 +3,11 @@ package day4
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/binary"
 	"math"
 	"strconv"
+
+	"github.com/sirgwain/advent-of-code/advent"
 )
 
 type Day struct {
@@ -13,35 +16,34 @@ type Day struct {
 func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 
-	s1 = findHash(bytes.TrimSpace(input), 1, false)
-	s2 = findHash(bytes.TrimSpace(input), s1, true)
+	input = bytes.TrimSpace(input)
+
+	s1 = findHash(input, 1, 0xFFFFF000)
+	s2 = findHash(input, int64(s1), 0xFFFFFF00)
 
 	return s1, s2, nil
 }
 
-func findHash(key []byte, start int, sixHexDigits bool) int {
-	h := md5.New()
-	var num [16]byte
-	hash := make([]byte, 0, 16)
+func findHash(key []byte, start int64, mask uint32) int {
+	keylen := len(key)
+	buf := make([]byte, keylen, keylen+20)
 
-	for count := start; ; count++ {
-		h.Reset()
-		h.Write(key)
+	// put the key at the start of the buf
+	copy(buf, key)
 
-		b := strconv.AppendInt(num[:0], int64(count), 10)
-		h.Write(b)
+	// render the start to the message
+	msg := strconv.AppendInt(buf, start, 10)
 
+	for count := start; count < math.MaxInt64; count++ {
 		// compute hash from new key
-		hash = h.Sum(hash[:0]) // no alloc if cap(out) >= 16
+		hash := md5.Sum(msg)
 
-		// check first 5 hex digits
-		if hash[0] == 0 &&
-			hash[1] == 0 &&
-			(hash[2]&0xF0) == 0 && (!sixHexDigits || (hash[2]&0x0F) == 0) {
-			return count
+		// check first 5 or 6 hex digits
+		if (binary.BigEndian.Uint32(hash[:4]) & mask) == 0 {
+			return int(count)
 		}
-		if count == math.MaxInt {
-			return -1
-		}
+
+		msg = msg[:keylen+len(advent.Incr(msg[keylen:]))]
 	}
+	return -1
 }

@@ -13,7 +13,7 @@ func Test_findHash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			if got := findHash(tt.key, 1, false); got != tt.want {
+			if got := findHash(tt.key, 1, 0xFFFFF000); got != tt.want {
 				t.Errorf("findHash() = %v, want %v", got, tt.want)
 			}
 		})

@@ -34,3 +34,18 @@ func AtoiFixed(b []byte) int {
 func AtoiFixed2(b []byte) int {
 	return int(b[0]&0xF)*10 + int(b[1]&0xF)
 }
+
+// Incr increments the ASCII decimal number in d, returning the (possibly longer) slice.
+func Incr(d []byte) []byte {
+	for i := len(d) - 1; i >= 0; i-- {
+		if d[i] < '9' {
+			d[i]++
+			return d
+		}
+		d[i] = '0'
+	}
+
+	// all 9s → now all 0s; make it 1000...
+	d[0] = '1'
+	return append(d, '0')
+}
