@@ -27,11 +27,27 @@ func BenchmarkDays(b *testing.B) {
 			// cheaper and less noisy than StopTimer/StartTimer per iteration.
 			buf := make([]byte, len(input))
 			b.ReportAllocs()
-			for b.Loop() {
-				copy(buf, input)
-				if _, _, err := r.Run(buf); err != nil {
-					b.Fatal(err)
+
+			// Call the day's Run/RunS directly rather than dayRunner.Run, which
+			// converts int answers with strconv.Itoa and would add its
+			// allocations to every int day's numbers.
+			switch {
+			case r.r != nil:
+				for b.Loop() {
+					copy(buf, input)
+					if _, _, err := r.r.Run(buf); err != nil {
+						b.Fatal(err)
+					}
 				}
+			case r.rs != nil:
+				for b.Loop() {
+					copy(buf, input)
+					if _, _, err := r.rs.RunS(buf); err != nil {
+						b.Fatal(err)
+					}
+				}
+			default:
+				b.Skip("no Run/RunS implementation")
 			}
 		})
 	}

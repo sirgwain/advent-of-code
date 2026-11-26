@@ -37,3 +37,6 @@ advent-of-code
 
 # don't include input from benchmarks with real data
 advent/2015/day12/testdata/input.txt
+
+# raw benchmark output used to generate BENCHMARKS.md
+.bench/
