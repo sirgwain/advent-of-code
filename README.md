@@ -43,6 +43,18 @@ Global Flags:
       --debug   enable debug logging
 ```
 
+## recording solutions
+
+Once a day is solved, record its answers to `inputs/solutions.json`. Later runs compare against them and flag any change (handy when optimizing).
+
+```zsh
+./advent-of-code record --year 2015 --day 1   # one day
+./advent-of-code record                       # every day
+
+./advent-of-code run --year 2015 --day 1
+2015-1 solution1: 74 solution2: 1795 ✓
+```
+
 ## adding a new day
 
 All puzzles must have a Run function satisfying this interface and must be placed in an `advent/<year>/<dayn>/` package. 

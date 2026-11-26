@@ -8,10 +8,12 @@ type Day struct {
 }
 
 func (d *Day) RunS(input []byte) (string, string, error) {
-	pass1 := nextPassword(bytes.TrimSpace(input))
-	pass2 := nextPassword(pass1)
+	pass := nextPassword(bytes.TrimSpace(input))
+	// nextPassword mutates in place, so copy part 1 out before reusing the buffer
+	s1 := string(pass)
+	pass = nextPassword(pass)
 
-	return string(pass1), string(pass2), nil
+	return s1, string(pass), nil
 }
 
 func nextPassword(pass []byte) []byte {
