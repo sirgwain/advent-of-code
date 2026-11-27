@@ -49,3 +49,8 @@ func Incr(d []byte) []byte {
 	d[0] = '1'
 	return append(d, '0')
 }
+
+// PackLetters creates a packed 10byte pair for two letters
+func PackLetters(a, b byte) uint16 {
+	return uint16((a-'a'))<<5 | uint16(b-'a')
+}

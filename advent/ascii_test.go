@@ -55,3 +55,24 @@ func TestIncrSequence(t *testing.T) {
 		}
 	}
 }
+
+func TestPackLetters(t *testing.T) {
+	tests := []struct {
+		name string
+		a    byte
+		b    byte
+		want uint16
+	}{
+		{name: "ab=0x01", a: 'a', b: 'b', want: 0x01},
+		{name: "ac=0x02", a: 'a', b: 'c', want: 0x02},
+		{name: "yz=0b11000_11001", a: 'y', b: 'z', want: 0b11000_11001},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := advent.PackLetters(tt.a, tt.b)
+			if got != tt.want {
+				t.Errorf("PackLetters() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

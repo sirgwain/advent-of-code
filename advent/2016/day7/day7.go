@@ -2,26 +2,84 @@ package day7
 
 import (
 	"bytes"
+	"fmt"
 	"iter"
+
+	"github.com/sirgwain/advent-of-code/advent"
 )
 
 type Day struct{}
+
+// encoded ABA pairs using triangle indexing
+var abaPairs [1024]byte
+
+const abaInIp = 0x80
+const abaInHypernet = 0x60
 
 func (d *Day) Run(input []byte) (int, int, error) {
 	var s1, s2 int
 
 	for line := range bytes.SplitSeq(bytes.TrimSpace(input), []byte("\n")) {
+		clear(abaPairs[:])
 		hasAbba := false
+		hypernetAbba := false
+		hasAba := false
+
 		for seg, inhypernet := range segments(line) {
-			ok := findAbba(seg)
-			if ok && inhypernet {
-				ok = false
-				break
+
+			// part1, search for ABBAs
+			if findAbba(seg) {
+				if inhypernet {
+					hypernetAbba = true
+					hasAbba = false
+				} else if !hypernetAbba {
+					hasAbba = true
+				}
 			}
-			hasAbba = hasAbba || ok
+
+			// part2, search for ABAs with matching BABs in hypernets
+			if !hasAba {
+				for i := 0; i < len(seg)-2; i++ {
+
+					// check for ABA
+					a1, b1, a2 := seg[i], seg[i+1], seg[i+2]
+					if a1 == a2 && a1 != b1 {
+						var index uint16
+						var val byte
+						if inhypernet {
+							// reverse the check in the hypernet
+							index = advent.PackLetters(b1, a1)
+							val = abaInHypernet
+						} else {
+							index = advent.PackLetters(a1, b1)
+							val = abaInIp
+						}
+						if inhypernet && abaPairs[index] == abaInIp {
+							if advent.Viz.Enabled {
+								fmt.Printf("Found hypernet pair %s -> %s <-> %s\n", line, string([]byte{a1, b1, a2}), string([]byte{b1, a1, b1}))
+							}
+							// we have a pair from a segment and we found a match in the hypernet
+							hasAba = true
+							break
+						} else if !inhypernet && abaPairs[index] == abaInHypernet {
+							if advent.Viz.Enabled {
+								fmt.Printf("Found pair %s -> %s <-> %s\n", line, string([]byte{a1, b1, a2}), string([]byte{b1, a1, b1}))
+							}
+							// we have a pair from a hypernet and we found a match in the segment
+							hasAba = true
+							break
+						}
+						abaPairs[index] = val
+					}
+				}
+			}
+
 		}
 		if hasAbba {
 			s1++
+		}
+		if hasAba {
+			s2++
 		}
 	}
 
