@@ -10,7 +10,8 @@ func Test_solve(t *testing.T) {
 		wants2 int
 	}{
 		{name: "1122 = 3", input: "1122", wants1: 3},
-		{name: "1111 = 4", input: "1111", wants1: 4},
+		{name: "1111 = 4", input: "1111", wants1: 4, wants2: 4},
+		{name: "1212 s2=6", input: "1212", wants2: 6},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
