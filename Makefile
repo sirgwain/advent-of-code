@@ -3,6 +3,9 @@
 build: generate
 	go build -o advent-of-code main.go
 
+build-purego:
+	go build -tags purego -o advent-of-code main.go
+
 generate:
 	go generate ./...
 
