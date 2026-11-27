@@ -13,6 +13,8 @@ func TestDay_Run(t *testing.T) {
 	}{
 		{name: "has abba", input: "abba[mnop]qrst\n", wants1: 1},
 		{name: "has 2 abbas", input: "abba[mnop]qrst\nqrst[mnop]abba\n", wants1: 2},
+		{name: "multiple hypernets invalid", input: "abba[mnop]qrst[abba]abba\n", wants1: 0},
+		{name: "multiple hypernets valid", input: "qrst[mnop]qrst[mnop]abba\n", wants1: 1},
 		{name: "abba in hypernet", input: "abcd[bddb]xyyx\n", wants1: 0},
 		{name: "aaaa invalid", input: "aaaa[qwer]tyui\n", wants1: 0},
 		{name: "oxxo in string is valid", input: "ioxxoj[asdfgh]zxcvbn\n", wants1: 1},
