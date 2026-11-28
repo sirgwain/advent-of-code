@@ -47,10 +47,65 @@ func (d *Day) Run(input []byte) (int, int, error) {
 		if steps+dist >= num {
 			dist = num - steps
 		}
-
 	}
 
 	s1 = advent.Abs(x) + advent.Abs(y)
+
+	// part 2, generate the board
+	dirs := [][2]int{
+		{0, 1}, // up
+		{1, 1},
+		{1, 0},  // right
+		{1, -1}, // down right
+		{0, -1},
+		{-1, -1},
+		{-1, 0},
+		{-1, 1}, // up left
+	}
+	board := advent.MakeBoard[int](20, 20)
+	x, y = 10, 10
+	board[x][y] = 1
+	dist = 1
+	hx, hy = 1, 0
+	steps = 1
+	i = 0
+
+	// build the spiral (or just look it up here: https://oeis.org/A141481)
+findsums:
+	for {
+		for range dist {
+			// take a step
+			x += hx
+			y += hy
+
+			// add all adjacent tiles
+			for _, d := range dirs {
+				board[y][x] += board[y+d[1]][x+d[0]]
+			}
+
+			steps++
+
+			if advent.Viz.Enabled {
+				fmt.Println(advent.BoardToString(board, func(val int) string {
+					return fmt.Sprintf("%7d", val)
+				}))
+				fmt.Println()
+			}
+
+			if board[y][x] > num {
+				s2 = board[y][x]
+				break findsums
+			}
+
+		}
+
+		// turn left
+		hx, hy = -hy, hx
+		if i%2 == 1 {
+			dist++
+		}
+		i++
+	}
 
 	return s1, s2, nil
 }
