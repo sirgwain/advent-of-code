@@ -13,30 +13,24 @@ func (d *Day) Run(input []byte) (int, int, error) {
 
 	var nums [3][3]int
 	var row, col int
-	var num int
-	for _, b := range input {
-		digit := b - '0'
-		if digit <= 9 {
-			num = num*10 + int(digit)
+
+	for num := range advent.NumberFieldsSeq(input) {
+		nums[row][col] = num
+		if advent.Viz.Enabled {
+			fmt.Printf("r: %d, c: %d <- %d\n", row, col, num)
+		}
+
+		col++
+		if col < 3 {
 			continue
 		}
-		if b == ' ' || b == '\n' {
-			if num > 0 {
-				nums[row][col] = num
-				if advent.Viz.Enabled {
-					fmt.Printf("r: %d, c: %d <- %d\n", row, col, num)
-				}
-				col++
-			}
-			num = 0
+		// check cols for solution 1
+		num1, num2, num3 := nums[row][0], nums[row][1], nums[row][2]
+		if checkTriangleSides(num1, num2, num3) {
+			s1++
 		}
-		if b == '\n' {
-			// check cols for solution 1
-			num1, num2, num3 := nums[row][0], nums[row][1], nums[row][2]
-			if checkTriangleSides(num1, num2, num3) {
-				s1++
-			}
 
+		if row == 2 {
 			// count every three rows
 			if row%3 == 2 {
 				for r := range 3 {
@@ -47,9 +41,9 @@ func (d *Day) Run(input []byte) (int, int, error) {
 				}
 			}
 
-			row = (row + 1) % 3
-			col = 0
 		}
+		row = (row + 1) % 3
+		col = 0
 	}
 
 	return s1, s2, nil
